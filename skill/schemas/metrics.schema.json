@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnimationAnalysisMetrics",
+  "description": "Internal metrics computed during animation analysis",
+  "type": "object",
+  "properties": {
+    "sampled_frames": {
+      "type": "integer",
+      "description": "Number of frames sampled for analysis"
+    },
+    "frame_diffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "frameA": { "type": "integer" },
+          "frameB": { "type": "integer" },
+          "diffScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Normalized pixel difference (0=identical, 1=max different)"
+          }
+        },
+        "required": ["frameA", "frameB", "diffScore"]
+      }
+    },
+    "largest_change_frames": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "description": "Frame numbers with the strongest visual changes"
+    },
+    "average_brightness_range": {
+      "type": "object",
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      },
+      "required": ["min", "max"]
+    },
+    "brightness_stats": {
+      "type": "object",
+      "properties": {
+        "perFrame": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "frame": { "type": "integer" },
+              "mean": { "type": "number" }
+            },
+            "required": ["frame", "mean"]
+          }
+        },
+        "overall": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "mean": { "type": "number" },
+            "stddev": { "type": "number" }
+          },
+          "required": ["min", "max", "mean", "stddev"]
+        }
+      },
+      "required": ["perFrame", "overall"]
+    }
+  },
+  "required": ["sampled_frames", "frame_diffs", "largest_change_frames", "average_brightness_range"]
+}

@@ -1,0 +1,73 @@
+# Animation Error Check — Heuristic Rules
+# These rules operate on measured pixel data only.
+# They do NOT claim to evaluate animation principles they cannot detect.
+
+rules:
+  - id: low_motion
+    name: Low Overall Motion
+    description: Average frame-to-frame difference is below threshold
+    condition: avg_diff < 0.005
+    severity: high
+    message: >
+      Very low average frame difference ({avg_diff_pct}%).
+      The clip appears nearly static.
+    measured_signal: frame_pixel_diff
+
+  - id: even_motion
+    name: Too-Even Motion
+    description: Frame differences have very low variance relative to mean
+    condition: diff_stddev < avg_diff * 0.15 AND avg_diff > 0.005 AND frame_count > 4
+    severity: medium
+    message: >
+      Frame-to-frame differences are very uniform (stddev: {diff_stddev_pct}%).
+      Motion may lack ease-in/ease-out or acceleration changes.
+    measured_signal: frame_pixel_diff_variance
+
+  - id: abrupt_transition
+    name: Abrupt Transition
+    description: Single frame pair shows diff much larger than average
+    condition: diff_score > avg_diff + 3 * diff_stddev AND diff_score > 0.05
+    severity: dynamic  # high if > 5x avg, else medium
+    message: >
+      Abrupt visual change between frames {frame_a}→{frame_b}
+      (diff: {diff_pct}% vs avg {avg_diff_pct}%).
+      Could be a scene cut, pop, or missing in-between.
+    measured_signal: frame_pixel_diff
+
+  - id: brightness_shift
+    name: Brightness Shift
+    description: Large brightness change between consecutive sampled frames
+    condition: brightness_delta > 30
+    severity: dynamic  # high if > 60, else medium
+    message: >
+      Brightness shifted by {delta} units between sampled frames.
+      May indicate a lighting pop or render issue.
+    measured_signal: per_frame_brightness
+
+  - id: possible_hold
+    name: Possible Hold
+    description: Extremely low variation across all frames
+    condition: diff_range < 0.002 AND frame_count > 8
+    severity: low
+    message: >
+      Extremely low variation across all sampled frames.
+      The clip may contain held frames or a very subtle loop.
+    measured_signal: frame_pixel_diff_range
+
+# Future rules (not yet implemented — require additional signals):
+#
+# - timing_chart_analysis:
+#     requires: pose_estimation (MediaPipe)
+#     description: Analyze spacing between poses over time
+#
+# - arc_quality:
+#     requires: motion_path_extraction
+#     description: Check if motion paths follow smooth arcs
+#
+# - squash_stretch:
+#     requires: shape_analysis
+#     description: Detect squash and stretch deformation
+#
+# - follow_through:
+#     requires: multi_joint_tracking
+#     description: Check for follow-through and overlapping action

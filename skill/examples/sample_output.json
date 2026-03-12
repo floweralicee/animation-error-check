@@ -1,0 +1,44 @@
+{
+  "clip_id": "bouncing_ball_v2.mp4",
+  "exercise_type": "bouncing_ball",
+  "metadata": {
+    "fps": 24,
+    "duration_sec": 4.17,
+    "width": 1920,
+    "height": 1080,
+    "frame_count": 100
+  },
+  "analysis": {
+    "sampled_frames": 24,
+    "largest_change_frames": [25, 50, 75, 88],
+    "average_brightness_range": {
+      "min": 52.14,
+      "max": 58.92
+    }
+  },
+  "summary": "Analyzed 24 sampled frames. Average frame difference: 3.42%. Strongest visual changes near frames: 25, 50, 75, 88. Found 2 potential issue(s): 0 high, 2 medium severity.",
+  "issues": [
+    {
+      "category": "even_motion",
+      "severity": "medium",
+      "frame_range": [0, 100],
+      "note": "Frame-to-frame differences are very uniform (stddev: 0.312%). Motion may lack ease-in/ease-out or acceleration changes."
+    },
+    {
+      "category": "abrupt_transition",
+      "severity": "medium",
+      "frame_range": [49, 50],
+      "note": "Abrupt visual change between frames 49→50 (diff: 12.85% vs avg 3.42%). Could be a scene cut, pop, or missing in-between."
+    }
+  ],
+  "confidence_notes": [
+    "Analysis is based on pixel-level frame differences and brightness only.",
+    "This does NOT evaluate animation principles like timing, spacing, arcs, or weight.",
+    "Future versions will add pose estimation and motion-path analysis for deeper critique."
+  ],
+  "keyframe_paths": [
+    "keyframes/kf_001.png",
+    "keyframes/kf_002.png",
+    "keyframes/kf_003.png"
+  ]
+}
