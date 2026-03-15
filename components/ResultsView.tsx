@@ -39,12 +39,12 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
   return (
     <div>
       {/* Overall Score */}
-      <div className="card" style={{ textAlign: 'center' }}>
+      <div className="card text-center">
         <h2>Overall Animation Score</h2>
         <div className={`overall-score ${scoreColor}`}>
           {Math.round(result.overall_score * 100)}
         </div>
-        <p style={{ color: '#6b6b8a', marginTop: '0.4rem', fontSize: '0.85rem' }}>/100</p>
+        <p className="mt-1 text-sm text-text-muted">/100</p>
       </div>
 
       {/* Summary */}
@@ -191,7 +191,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
                 <strong>{issue.category.replace(/_/g, ' ')}</strong>
                 {' '}— Frames {issue.frame_range[0]}–{issue.frame_range[1]}
                 <br />
-                <span style={{ color: '#6b6b8a' }}>{issue.note}</span>
+                <span className="text-text-muted">{issue.note}</span>
               </li>
             ))}
           </ul>

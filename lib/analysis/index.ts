@@ -1,6 +1,8 @@
 import { extractMetadata } from '../video/metadata';
 import { sampleFrames } from '../video/frameSampler';
 import { extractKeyframes } from '../video/keyframes';
+import { isMatAnyone2Available, generateAutoMask, runMatAnyone2 } from '../video/matanyone';
+import { extractForeground, loadMatAnyone2Foreground, ForegroundResult } from '../video/foreground';
 import { computeFrameDiffs, findLargestChanges } from './frameDiff';
 import { computeBrightness } from './brightness';
 import { computeAllMotionVectors } from './motionVectors';
@@ -8,6 +10,7 @@ import { buildMotionProfile } from './motionProfile';
 import { extractZoneMotionProfiles } from './bodyZones';
 import { analyzeAllPrinciples } from './principles';
 import { generateCritique, generatePrincipleSummary } from './critique';
+import { getExerciseProfile } from './exerciseThresholds';
 import { formatOutput } from '../output/formatter';
 import { PipelineInput, AnalysisOutput } from '../types';
 import path from 'path';
@@ -15,7 +18,17 @@ import fs from 'fs/promises';
 
 /**
  * Main analysis pipeline orchestrator.
- * Runs: metadata → frames → diffs → brightness → motion vectors → motion profile → 12 principles → output.
+ *
+ * Pipeline:
+ * 1. Extract metadata
+ * 2. Sample frames (dense)
+ * 3. Foreground segmentation (MatAnyone2 if available, temporal-diff fallback)
+ * 4. Frame diffs + brightness (legacy)
+ * 5. Motion vectors (foreground-masked)
+ * 6. Motion profile
+ * 7. Body zone profiles
+ * 8. 12 principle analyzers (with exercise-specific thresholds + velocity curve fitting)
+ * 9. Format output
  */
 export async function runAnalysisPipeline(input: PipelineInput): Promise<AnalysisOutput> {
   const { videoPath, clipId, exerciseType, workDir, sampleCount = 48 } = input;
@@ -52,25 +65,71 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
     keyframePaths = [];
   }
 
-  // Step 4: Compute frame diffs (legacy)
+  // Step 4: Foreground segmentation
+  let foreground: ForegroundResult | null = null;
+  let foregroundMethod: 'matanyone2' | 'temporal_diff' | 'none' = 'none';
+
+  try {
+    const matAvailable = await isMatAnyone2Available();
+
+    if (matAvailable) {
+      // Generate auto-mask from temporal differencing of first frames
+      console.log('MatAnyone2 available — generating auto-mask...');
+      const maskPath = await generateAutoMask(framePaths, workDir, metadata.width, metadata.height);
+
+      // Run MatAnyone2
+      console.log('Running MatAnyone2 foreground extraction...');
+      const matResult = await runMatAnyone2(videoPath, maskPath, workDir);
+
+      if (matResult.success) {
+        foreground = await loadMatAnyone2Foreground(
+          matResult.fgrDir,
+          matResult.phaDir,
+          framePaths.length
+        );
+        foregroundMethod = 'matanyone2';
+        console.log('MatAnyone2 foreground extraction complete.');
+      }
+    }
+
+    // Fallback to temporal differencing if MatAnyone2 not available or failed
+    if (!foreground) {
+      console.log('Using temporal-diff foreground segmentation...');
+      foreground = await extractForeground(framePaths);
+      foregroundMethod = 'temporal_diff';
+    }
+  } catch (err) {
+    console.warn('Foreground segmentation failed, proceeding without:', err);
+    foregroundMethod = 'none';
+  }
+
+  // Step 5: Compute frame diffs (legacy — still uses raw frames)
   const diffs = await computeFrameDiffs(framePaths, frameNumbers);
 
-  // Step 5: Compute brightness
+  // Step 6: Compute brightness
   const brightness = await computeBrightness(framePaths, frameNumbers);
 
-  // Step 6: Find largest changes (legacy)
+  // Step 7: Find largest changes (legacy)
   const largestChangeFrames = findLargestChanges(diffs, 4);
 
-  // Step 7: Compute motion vectors (block matching)
-  const motionVectors = await computeAllMotionVectors(framePaths, frameNumbers);
+  // Step 8: Compute motion vectors (foreground-masked if available)
+  const motionVectors = await computeAllMotionVectors(
+    framePaths,
+    frameNumbers,
+    foreground?.maskedFrames,
+    foreground?.masks
+  );
 
-  // Step 8: Build motion profile
+  // Step 9: Build motion profile
   const motionProfile = buildMotionProfile(motionVectors, metadata);
 
-  // Step 8b: Extract per-body-zone motion profiles
+  // Step 10: Extract per-body-zone motion profiles
   const zoneProfiles = extractZoneMotionProfiles(motionVectors, motionProfile.primaryRegion);
 
-  // Step 9: Run all 12 principle analyzers (with zone data)
+  // Step 11: Get exercise-specific thresholds
+  const exerciseProfile = getExerciseProfile(exerciseType);
+
+  // Step 12: Run all 12 principle analyzers (with zone data + exercise thresholds)
   const { analyses: principlesAnalysis, overallScore } = analyzeAllPrinciples({
     motionProfile,
     motionVectors,
@@ -79,18 +138,27 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
     frameNumbers,
     exerciseType,
     zoneProfiles,
+    exerciseProfile,
+    foregroundMethod,
   });
 
-  // Step 10: Generate legacy critique
+  // Step 13: Generate legacy critique
   const legacyCritique = generateCritique(diffs, brightness, largestChangeFrames, exerciseType);
 
-  // Step 11: Generate principle-based summary + priorities
+  // Update confidence notes based on foreground method
+  if (foregroundMethod === 'matanyone2') {
+    legacyCritique.confidenceNotes[0] = 'Foreground isolation by MatAnyone2 — background noise removed for accurate analysis.';
+  } else if (foregroundMethod === 'temporal_diff') {
+    legacyCritique.confidenceNotes[0] = 'Foreground isolation by temporal differencing — most background noise filtered.';
+  }
+
+  // Step 14: Generate principle-based summary + priorities
   const { summary: principleSummary, topPriorities } = generatePrincipleSummary(
     principlesAnalysis,
     overallScore
   );
 
-  // Step 12: Format output
+  // Step 15: Format output
   const output = formatOutput({
     clipId,
     exerciseType,

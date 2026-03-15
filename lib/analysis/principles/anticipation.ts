@@ -17,16 +17,18 @@ export function analyzeAnticipation(ctx: PrincipleContext): PrincipleAnalysis {
 
   const mvs = ctx.motionVectors;
 
-  // Find large motion events: frames where displacement > 2x average
+  const ep = ctx.exerciseProfile;
+
+  // Find large motion events: frames where displacement > threshold × average
   for (let i = 0; i < perFrame.length; i++) {
-    if (perFrame[i].displacement <= avg * 2) continue;
+    if (perFrame[i].displacement <= avg * ep.bigMoveRatio) continue;
     if (i < 3) continue; // not enough preceding frames to check
 
     // Get dominant direction of the big move
     const bigMoveDir = perFrame[i].directionDeg;
 
-    // Check preceding 3-5 frames for reverse motion
-    const lookback = Math.min(5, i);
+    // Check preceding frames for reverse motion — exercise-specific lookback
+    const lookback = Math.min(ep.anticipationLookback, i);
     let hasAnticipation = false;
     for (let j = i - lookback; j < i; j++) {
       if (perFrame[j].isHold) continue;

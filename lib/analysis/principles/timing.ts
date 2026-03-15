@@ -1,6 +1,7 @@
 import { PrincipleAnalysis, PrincipleIssue } from '../../types';
 import { PrincipleContext, frameToTimestamp, findMotionSegments } from './types';
 import { ZoneMotionProfile, ZONE_DISPLAY_NAMES } from '../bodyZones';
+import { ExerciseProfile } from '../exerciseThresholds';
 
 /**
  * Timing: analyze whether motion is too rushed or too slow.
@@ -10,6 +11,8 @@ export function analyzeTiming(ctx: PrincipleContext): PrincipleAnalysis {
   const issues: PrincipleIssue[] = [];
   const fps = ctx.metadata.fps;
   const zoneScores: Record<string, number> = {};
+
+  const ep = ctx.exerciseProfile;
 
   // Whole-body timing analysis
   const wholeBodyIssues = analyzeTimingForProfile(
@@ -22,7 +25,7 @@ export function analyzeTiming(ctx: PrincipleContext): PrincipleAnalysis {
     fps,
     'whole_body',
     'Whole Body',
-    ctx
+    ep
   );
   issues.push(...wholeBodyIssues.issues);
   zoneScores['whole_body'] = wholeBodyIssues.score;
@@ -39,7 +42,7 @@ export function analyzeTiming(ctx: PrincipleContext): PrincipleAnalysis {
       fps,
       zone.zone,
       zone.displayName,
-      ctx
+      ep
     );
     issues.push(...zoneResult.issues);
     zoneScores[zone.zone] = zoneResult.score;
@@ -67,7 +70,7 @@ function analyzeTimingForProfile(
   fps: number,
   zone: string,
   zoneName: string,
-  ctx: PrincipleContext
+  ep: ExerciseProfile
 ): { issues: PrincipleIssue[]; score: number } {
   const issues: PrincipleIssue[] = [];
 
@@ -75,15 +78,15 @@ function analyzeTimingForProfile(
     return { issues: [], score: 1.0 };
   }
 
-  // Rushed detection
+  // Rushed detection — uses exercise-specific threshold
   let runStart = -1;
   for (let i = 0; i <= frames.length; i++) {
-    const isRushed = i < frames.length && frames[i].displacement > avg * 2 && !frames[i].isHold;
+    const isRushed = i < frames.length && frames[i].displacement > avg * ep.rushedRatio && !frames[i].isHold;
     if (isRushed && runStart === -1) {
       runStart = i;
     } else if (!isRushed && runStart !== -1) {
       const runLen = i - runStart;
-      if (runLen >= 3) {
+      if (runLen >= ep.rushedMinFrames) {
         const startFrame = frames[runStart].frame;
         const endFrame = frames[i - 1].frame;
         const avgInRun = frames.slice(runStart, i).reduce((s, f) => s + f.displacement, 0) / runLen;
@@ -113,12 +116,12 @@ function analyzeTimingForProfile(
   // Dragging detection
   runStart = -1;
   for (let i = 0; i <= frames.length; i++) {
-    const isDragging = i < frames.length && frames[i].displacement < avg * 0.3 && !frames[i].isHold;
+    const isDragging = i < frames.length && frames[i].displacement < avg * ep.draggingRatio && !frames[i].isHold;
     if (isDragging && runStart === -1) {
       runStart = i;
     } else if (!isDragging && runStart !== -1) {
       const runLen = i - runStart;
-      if (runLen >= 5) {
+      if (runLen >= ep.draggingMinFrames) {
         const startFrame = frames[runStart].frame;
         const endFrame = frames[i - 1].frame;
         const avgInRun = frames.slice(runStart, i).reduce((s, f) => s + f.displacement, 0) / runLen;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface UploadFormProps {
   onAnalyze: (file: File, exerciseType: string) => void;
@@ -13,11 +14,6 @@ const EXERCISE_TYPES = [
   { value: 'walk_cycle', label: 'Walk Cycle' },
   { value: 'jump', label: 'Jump' },
   { value: 'acting', label: 'Acting / Performance' },
-];
-
-const FPS_OPTIONS = [
-  { value: '24', label: '24 fps (default)' },
-  { value: '60', label: '60 fps' },
 ];
 
 export default function UploadForm({ onAnalyze, loading }: UploadFormProps) {
@@ -33,7 +29,7 @@ export default function UploadForm({ onAnalyze, loading }: UploadFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card">
+    <form onSubmit={handleSubmit} className="card" style={{ borderLeft: '4px solid rgba(250, 142, 164, 0.5)' }}>
       <div>
         <label htmlFor="video-file">Animation Clip</label>
         <input
@@ -62,12 +58,12 @@ export default function UploadForm({ onAnalyze, loading }: UploadFormProps) {
         </div>
       </div>
 
-      <button type="submit" disabled={!file || loading}>
+      <Button type="submit" disabled={!file || loading} loading={loading} size="lg">
         {loading ? 'Analyzing...' : 'Analyze'}
-      </button>
+      </Button>
 
       {file && (
-        <p style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: '#6b6b8a' }}>
+        <p className="mt-3 text-sm text-text-muted">
           Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
         </p>
       )}

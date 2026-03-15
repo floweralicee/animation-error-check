@@ -1,5 +1,6 @@
 import { MotionProfile, FrameMotionVectors, BrightnessStats, VideoMetadata, PrincipleAnalysis, ExerciseType } from '../../types';
 import { ZoneMotionProfile } from '../bodyZones';
+import { ExerciseProfile } from '../exerciseThresholds';
 
 export interface PrincipleContext {
   motionProfile: MotionProfile;
@@ -9,6 +10,9 @@ export interface PrincipleContext {
   frameNumbers: number[];
   exerciseType: ExerciseType;
   zoneProfiles: ZoneMotionProfile[];
+  exerciseProfile: ExerciseProfile;
+  /** Whether foreground segmentation was used */
+  foregroundMethod: 'matanyone2' | 'temporal_diff' | 'none';
 }
 
 export type PrincipleAnalyzer = (ctx: PrincipleContext) => PrincipleAnalysis;

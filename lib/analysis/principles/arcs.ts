@@ -11,9 +11,11 @@ export function analyzeArcs(ctx: PrincipleContext): PrincipleAnalysis {
   const fps = ctx.metadata.fps;
   const zoneScores: Record<string, number> = {};
 
+  const ep = ctx.exerciseProfile;
+
   // Whole-body arc analysis
   const wholeResult = analyzeArcForPath(
-    ctx.motionProfile.motionPath, fps, 'whole_body', 'Whole Body'
+    ctx.motionProfile.motionPath, fps, 'whole_body', 'Whole Body', ep.arcMinCurvature, ep.arcMaxDeviation
   );
   issues.push(...wholeResult.issues);
   zoneScores['whole_body'] = wholeResult.score;
@@ -24,7 +26,7 @@ export function analyzeArcs(ctx: PrincipleContext): PrincipleAnalysis {
       zoneScores[zone.zone] = 1.0;
       continue;
     }
-    const result = analyzeArcForPath(zone.motionPath, fps, zone.zone, zone.displayName);
+    const result = analyzeArcForPath(zone.motionPath, fps, zone.zone, zone.displayName, ep.arcMinCurvature, ep.arcMaxDeviation);
     issues.push(...result.issues);
     zoneScores[zone.zone] = result.score;
   }
@@ -48,7 +50,9 @@ function analyzeArcForPath(
   path: { frame: number; x: number; y: number }[],
   fps: number,
   zone: string,
-  zoneName: string
+  zoneName: string,
+  minCurvature: number = 0.0005,
+  maxDeviation: number = 0.035
 ): { issues: PrincipleIssue[]; score: number } {
   const issues: PrincipleIssue[] = [];
   if (path.length < 5) return { issues: [], score: 1.0 };
@@ -86,8 +90,8 @@ function analyzeArcForPath(
     const avgDev = totalDev / n;
     const curvature = Math.abs(fitX.a) + Math.abs(fitY.a);
 
-    // Too linear
-    if (curvature < 0.0005 && pathLen > 0.05) {
+    // Too linear — use exercise-specific threshold
+    if (curvature < minCurvature && pathLen > 0.05) {
       issues.push({
         severity: 'medium',
         frame_start: window[0].frame,
@@ -104,7 +108,7 @@ function analyzeArcForPath(
     }
 
     // Erratic / jerky
-    if (avgDev > 0.03 && pathLen > 0.05) {
+    if (avgDev > maxDeviation && pathLen > 0.05) {
       const worstFrame = window[maxDevIdx].frame;
       issues.push({
         severity: avgDev > 0.06 ? 'high' : 'low',

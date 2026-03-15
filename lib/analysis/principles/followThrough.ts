@@ -46,8 +46,9 @@ export function analyzeFollowThrough(ctx: PrincipleContext): PrincipleAnalysis {
     if (stopFrames.length >= 3) {
       const frames = stopFrames.map((s) => s.frame);
       const range = Math.max(...frames) - Math.min(...frames);
-      // If all zones stop within 2 frames of each other, it's too simultaneous
-      if (range <= 2) {
+      // Exercise-specific: how close is "too simultaneous"
+      const maxSimRange = ctx.exerciseProfile.maxSimultaneousStopRange;
+      if (range <= maxSimRange) {
         const firstFrame = Math.min(...frames);
         const lastFrame = Math.max(...frames);
         issues.push({
@@ -57,7 +58,7 @@ export function analyzeFollowThrough(ctx: PrincipleContext): PrincipleAnalysis {
           timestamp_start: frameToTimestamp(firstFrame, fps),
           timestamp_end: frameToTimestamp(lastFrame + 4, fps),
           description: `All body zones stop within ${range} frames of each other (frames ${firstFrame}–${lastFrame}). There is no overlapping action — everything halts simultaneously.`,
-          recommendation: `Offset the stops: let the body/core settle first, then the head 2–3 frames later, then the arms/hands 3–5 frames after that. Use AnimBot Offset Keys to shift secondary controls by 2–4 frames. Apply OverShooter with a 2-frame delay on extremities.`,
+          recommendation: `Offset the stops: let the body/core settle first, then the head ${ctx.exerciseProfile.expectedStaggerPerLevel}–${ctx.exerciseProfile.expectedStaggerPerLevel + 1} frames later, then the arms/hands ${ctx.exerciseProfile.expectedStaggerPerLevel * 2}–${ctx.exerciseProfile.expectedStaggerPerLevel * 2 + 2} frames after that. Use animBot Time Offsetter Stagger to shift secondary controls. Apply animBot Scale from Neighbor Right for overshoot on extremities.`,
           measured_data: {
             stop_frame_range: range,
             zone_stop_frames: Object.fromEntries(stopFrames.map((s) => [s.zone, s.frame])),

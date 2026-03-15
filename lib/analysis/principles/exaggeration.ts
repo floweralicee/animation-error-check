@@ -29,10 +29,12 @@ export function analyzeExaggeration(ctx: PrincipleContext): PrincipleAnalysis {
   const firstFrame = perFrame[0]?.frame ?? 0;
   const lastFrame = perFrame[perFrame.length - 1]?.frame ?? 0;
 
-  // Narrow dynamic range — everything moves at similar speed
-  if (dynamicRange < 2.0 && nonHold.length >= 8) {
+  const ep = ctx.exerciseProfile;
+
+  // Narrow dynamic range — exercise-specific threshold
+  if (dynamicRange < ep.minDynamicRange && nonHold.length >= 8) {
     issues.push({
-      severity: dynamicRange < 1.5 ? 'high' : 'medium',
+      severity: dynamicRange < ep.minDynamicRange * 0.75 ? 'high' : 'medium',
       frame_start: firstFrame,
       frame_end: lastFrame,
       timestamp_start: frameToTimestamp(firstFrame, fps),
@@ -49,10 +51,9 @@ export function analyzeExaggeration(ctx: PrincipleContext): PrincipleAnalysis {
     });
   }
 
-  // Peak moments aren't exaggerated enough
-  if (peakToAvg < 1.5 && nonHold.length >= 5) {
-    const exerciseExpectsMore =
-      ctx.exerciseType === 'bouncing_ball' || ctx.exerciseType === 'jump';
+  // Peak moments aren't exaggerated enough — exercise-specific threshold
+  if (peakToAvg < ep.minPeakToAvgRatio && nonHold.length >= 5) {
+    const exerciseExpectsMore = ep.timingContrast === 'high';
     issues.push({
       severity: exerciseExpectsMore ? 'high' : 'low',
       frame_start: firstFrame,
