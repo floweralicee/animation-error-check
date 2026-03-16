@@ -7,9 +7,11 @@ import fs from 'fs/promises';
 import { buildMotionProfile } from '@/lib/analysis/motionProfile';
 import { computeAllMotionVectors } from '@/lib/analysis/motionVectors';
 
-// Vercel serverless: only /tmp is writable
+// Vercel serverless / Render: only /tmp is writable
 const UPLOAD_DIR =
-  process.env.VERCEL ? '/tmp/temp_uploads' : (process.env.UPLOAD_DIR || './temp_uploads');
+  process.env.VERCEL || process.env.RENDER
+    ? '/tmp/temp_uploads'
+    : (process.env.UPLOAD_DIR || './temp_uploads');
 const MAX_SIZE = parseInt(process.env.MAX_UPLOAD_SIZE || '104857600', 10);
 const VALID_EXERCISES: ExerciseType[] = ['auto', 'bouncing_ball', 'walk_cycle', 'jump', 'acting'];
 

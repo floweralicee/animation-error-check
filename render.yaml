@@ -1,0 +1,11 @@
+services:
+  - type: web
+    runtime: node
+    name: animation-error-check
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: UPLOAD_DIR
+        value: /tmp/temp_uploads
