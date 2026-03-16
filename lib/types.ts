@@ -159,4 +159,6 @@ export interface PipelineInput {
   sampleCount?: number;
   /** When true, sample all frames (bypasses Vercel/local caps). For testing. */
   useAllFrames?: boolean;
+  /** Optional callback invoked at each pipeline step for timeout diagnostics. */
+  onStep?: (step: string) => void;
 }

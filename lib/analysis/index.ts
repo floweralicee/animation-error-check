@@ -34,7 +34,8 @@ import fs from 'fs/promises';
 export async function runAnalysisPipeline(input: PipelineInput): Promise<AnalysisOutput> {
   ensureFfmpegPaths();
 
-  const { videoPath, clipId, exerciseType, workDir, sampleCount = 48, useAllFrames = false } = input;
+  const { videoPath, clipId, exerciseType, workDir, sampleCount = 48, useAllFrames = false, onStep } = input;
+  const step = (name: string) => { onStep?.(name); console.log(`[pipeline] ${name}`); };
 
   const isVercel = !!process.env.VERCEL;
   const hardCap = isVercel ? 16 : 24;
@@ -43,9 +44,11 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   await fs.mkdir(framesDir, { recursive: true });
 
   // Step 1: Extract metadata
+  step('extracting video metadata');
   const metadata = await extractMetadata(videoPath);
 
   // Step 2: Sample frames — cap tightly on Vercel to stay within 60s function limit (unless useAllFrames)
+  step('sampling frames');
   const effectiveSampleCount = useAllFrames
     ? metadata.frame_count
     : metadata.frame_count < hardCap
@@ -64,9 +67,11 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   }
 
   // Preload all frames once as grayscale buffers — shared across foreground, diffs, brightness, BMA
+  step('loading frame buffers');
   const sharedBuffers = await Promise.all(framePaths.map(loadGrayscaleBuffer));
 
   // Step 3: Extract keyframes (I-frames) — run in parallel with foreground segmentation
+  step('extracting keyframes & foreground segmentation');
   let keyframePaths: string[] = [];
   let foreground: ForegroundResult | null = null;
   let foregroundMethod: 'matanyone2' | 'temporal_diff' | 'none' = 'none';
@@ -107,6 +112,7 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   }
 
   // Steps 5 & 6: Compute frame diffs and brightness in parallel — both use sharedBuffers
+  step('computing frame diffs & brightness');
   const [diffs, brightness] = await Promise.all([
     computeFrameDiffs(framePaths, frameNumbers, sharedBuffers),
     computeBrightness(framePaths, frameNumbers, sharedBuffers),
@@ -116,6 +122,7 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   const largestChangeFrames = findLargestChanges(diffs, 4);
 
   // Step 8: Compute motion vectors — use masked frames if available, otherwise fall back to sharedBuffers
+  step('computing motion vectors');
   const motionVectors = await computeAllMotionVectors(
     framePaths,
     frameNumbers,
@@ -133,6 +140,7 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   const exerciseProfile = getExerciseProfile(exerciseType);
 
   // Step 12: Run all 12 principle analyzers (with zone data + exercise thresholds)
+  step('evaluating 12 animation principles');
   const { analyses: principlesAnalysis, overallScore } = analyzeAllPrinciples({
     motionProfile,
     motionVectors,
@@ -162,6 +170,7 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   );
 
   // Step 15: Format output
+  step('formatting output');
   const output = formatOutput({
     clipId,
     exerciseType,

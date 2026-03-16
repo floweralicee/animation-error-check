@@ -54,6 +54,8 @@ export const translations = {
     somethingWentWrong: 'Something went wrong',
     serverError: 'Server error',
     fileTooLarge: 'File too large. Max size: 4.5MB on Vercel. Try a smaller video.',
+    timeoutError:
+      'Analysis timed out (30 s). The server stopped processing. Try a shorter clip (under 5 s), lower the resolution, or reduce the frame count before uploading.',
 
     // Results
     overallScore: 'Overall Animation Score',
@@ -190,6 +192,8 @@ export const translations = {
     somethingWentWrong: '出了点问题',
     serverError: '服务器错误',
     fileTooLarge: '文件过大。Vercel 限制为 4.5MB，请上传更小的视频。',
+    timeoutError:
+      '分析超时（30 秒）。服务器已停止处理。请尝试更短的片段（5 秒以内）、降低分辨率，或减少帧数后重新上传。',
 
     // Results
     overallScore: '动画综合评分',

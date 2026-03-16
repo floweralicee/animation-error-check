@@ -35,11 +35,20 @@ export default function Home() {
         handleUploadUrl: '/api/blob-upload',
       });
 
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl: blob.url, exercise_type: exerciseType }),
-      });
+      const abortController = new AbortController();
+      const clientTimeoutId = setTimeout(() => abortController.abort(), 33_000);
+
+      let response: Response;
+      try {
+        response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoUrl: blob.url, exercise_type: exerciseType }),
+          signal: abortController.signal,
+        });
+      } finally {
+        clearTimeout(clientTimeoutId);
+      }
 
       const contentType = response.headers.get('content-type') ?? '';
       const text = await response.text();
@@ -61,13 +70,22 @@ export default function Home() {
       setResult(data as AnalysisResponse);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('somethingWentWrong');
+      const isAbort = err instanceof Error && err.name === 'AbortError';
       const isConnectionError =
-        msg.includes('Failed to fetch') ||
-        msg.includes('NetworkError') ||
-        msg.includes('Network request failed') ||
-        msg.toLowerCase().includes('connection') ||
-        msg.includes('ERR_CONNECTION');
-      setError(isConnectionError ? t('connectionError') : msg);
+        !isAbort && (
+          msg.includes('Failed to fetch') ||
+          msg.includes('NetworkError') ||
+          msg.includes('Network request failed') ||
+          msg.toLowerCase().includes('connection') ||
+          msg.includes('ERR_CONNECTION')
+        );
+      if (isAbort) {
+        setError(t('timeoutError'));
+      } else if (isConnectionError) {
+        setError(t('connectionError'));
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

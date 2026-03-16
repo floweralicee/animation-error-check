@@ -72,18 +72,38 @@ export async function POST(request: NextRequest) {
       await fs.writeFile(videoPath, Buffer.from(arrayBuffer));
     }
 
-    // Run analysis pipeline
+    // Run analysis pipeline with a 28-second hard timeout.
+    // If it hasn't finished in time, return a clear error explaining the last step reached.
+    const PIPELINE_TIMEOUT_MS = 28_000;
     const sampleCount = parseInt(
       process.env.SAMPLE_FRAME_COUNT || (process.env.VERCEL ? '16' : '48'),
       10
     );
-    const result = await runAnalysisPipeline({
-      videoPath,
-      clipId,
-      exerciseType,
-      workDir,
-      sampleCount,
+
+    let lastStep = 'initializing';
+    const timeoutError = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new Error(
+            `Analysis timed out after 28 s. Last completed step: "${lastStep}". ` +
+            `This usually means the video is too long, too high-resolution, or the server is under load. ` +
+            `Try a shorter clip (under 5 s), reduce the resolution, or use a video with fewer frames.`
+          )
+        );
+      }, PIPELINE_TIMEOUT_MS);
     });
+
+    const result = await Promise.race([
+      runAnalysisPipeline({
+        videoPath,
+        clipId,
+        exerciseType,
+        workDir,
+        sampleCount,
+        onStep: (step: string) => { lastStep = step; },
+      }),
+      timeoutError,
+    ]);
 
     // Read keyframe images as base64 for client preview
     let keyframePreviews: string[] = [];
