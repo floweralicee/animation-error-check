@@ -2,23 +2,26 @@
 
 import { useState } from 'react';
 import { PrincipleAnalysis } from '@/lib/types';
+import { useLocale } from '@/components/LocaleProvider';
+import { PRINCIPLE_DISPLAY_KEYS, SEVERITY_KEYS, type TranslationKeys } from '@/lib/i18n';
+
+const ZONE_KEYS: Record<string, TranslationKeys> = {
+  whole_body: 'zoneWholeBody',
+  head: 'zoneHead',
+  chest: 'zoneChest',
+  left_arm: 'zoneLeftArm',
+  right_arm: 'zoneRightArm',
+  core: 'zoneCore',
+  left_leg: 'zoneLeftLeg',
+  right_leg: 'zoneRightLeg',
+};
 
 interface PrincipleCardProps {
   principle: PrincipleAnalysis;
 }
 
-const ZONE_LABELS: Record<string, string> = {
-  whole_body: '🦴 Whole Body',
-  head: '🔵 Head / Nose',
-  chest: '🟢 Chest / Shoulders',
-  left_arm: '🟡 Left Arm',
-  right_arm: '🟠 Right Arm',
-  core: '🟣 Core / Hips',
-  left_leg: '🔴 Left Leg',
-  right_leg: '🟤 Right Leg',
-};
-
 export default function PrincipleCard({ principle }: PrincipleCardProps) {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [showData, setShowData] = useState<number | null>(null);
   const [showTools, setShowTools] = useState<number | null>(null);
@@ -36,7 +39,11 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
         style={{ cursor: 'pointer' }}
       >
         <div className="principle-title">
-          <span className="principle-name">{principle.display_name}</span>
+          <span className="principle-name">
+            {PRINCIPLE_DISPLAY_KEYS[principle.principle]
+              ? t(PRINCIPLE_DISPLAY_KEYS[principle.principle])
+              : principle.display_name}
+          </span>
           <span className={`principle-score ${scoreColor}`}>{scorePct}</span>
         </div>
         <div className="score-bar">
@@ -49,9 +56,10 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
             {Object.entries(principle.zone_scores).map(([zone, score]) => {
               const s = Math.round(score * 100);
               const c = score >= 0.7 ? 'score-good' : score >= 0.4 ? 'score-ok' : 'score-poor';
+              const zoneLabel = ZONE_KEYS[zone] ? t(ZONE_KEYS[zone]) : zone;
               return (
-                <span key={zone} className={`zone-pill ${c}`} title={ZONE_LABELS[zone] || zone}>
-                  {(ZONE_LABELS[zone] || zone).split(' ').slice(0, 2).join(' ')} {s}
+                <span key={zone} className={`zone-pill ${c}`} title={zoneLabel}>
+                  {zoneLabel.split(' ').slice(0, 2).join(' ')} {s}
                 </span>
               );
             })}
@@ -60,7 +68,7 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
 
         {principle.issues.length > 0 && (
           <span className="principle-issue-count">
-            {principle.issues.length} issue{principle.issues.length !== 1 ? 's' : ''}{' '}
+            {principle.issues.length} {principle.issues.length !== 1 ? t('issues') : t('issue')}{' '}
             {expanded ? '▾' : '▸'}
           </span>
         )}
@@ -71,14 +79,14 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
           {principle.issues.map((issue, i) => (
             <div key={i} className={`issue-detail ${issue.severity}`}>
               <div className="issue-detail-header">
-                <span className={`badge ${issue.severity}`}>{issue.severity}</span>
+                <span className={`badge ${issue.severity}`}>{t(SEVERITY_KEYS[issue.severity] || 'severityHigh')}</span>
                 {issue.body_zone_display && (
-                  <span className="zone-label">{ZONE_LABELS[issue.body_zone || ''] || issue.body_zone_display}</span>
+                  <span className="zone-label">{ZONE_KEYS[issue.body_zone || ''] ? t(ZONE_KEYS[issue.body_zone || '']) : issue.body_zone_display}</span>
                 )}
                 <span className="issue-frames">
-                  Frames {issue.frame_start}–{issue.frame_end} ({issue.timestamp_start} – {issue.timestamp_end})
+                  {t('framesLabel')} {issue.frame_start}–{issue.frame_end} ({issue.timestamp_start} – {issue.timestamp_end})
                 </span>
-                <span className="issue-confidence" title="Analysis confidence">
+                <span className="issue-confidence" title={t('analysisConfidence')}>
                   {Math.round(issue.confidence * 100)}%
                 </span>
               </div>
@@ -95,7 +103,7 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
                       setShowTools(showTools === i ? null : i);
                     }}
                   >
-                    🔧 {showTools === i ? 'Hide' : 'Show'} tool suggestions ({issue.tool_suggestions.length})
+                    🔧 {showTools === i ? t('hide') : t('show')} {t('toolSuggestions')} ({issue.tool_suggestions.length})
                   </button>
                   {showTools === i && (
                     <div className="tool-suggestions">
@@ -109,7 +117,7 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
                           </div>
                           <p className="tool-desc">{tool.description}</p>
                           <div className="tool-workflow">
-                            <strong>How to fix:</strong>
+                            <strong>{t('howToFix')}</strong>
                             <p>{tool.workflow}</p>
                           </div>
                         </div>
@@ -126,7 +134,7 @@ export default function PrincipleCard({ principle }: PrincipleCardProps) {
                   setShowData(showData === i ? null : i);
                 }}
               >
-                {showData === i ? 'Hide' : 'Show'} measured data
+                {showData === i ? t('hideMeasuredData') : t('showMeasuredData')}
               </button>
               {showData === i && (
                 <pre className="measured-data">

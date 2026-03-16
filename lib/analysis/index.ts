@@ -1,3 +1,4 @@
+import { ensureFfmpegPaths } from '../video/ffmpegSetup';
 import { extractMetadata } from '../video/metadata';
 import { sampleFrames } from '../video/frameSampler';
 import { extractKeyframes } from '../video/keyframes';
@@ -31,6 +32,8 @@ import fs from 'fs/promises';
  * 9. Format output
  */
 export async function runAnalysisPipeline(input: PipelineInput): Promise<AnalysisOutput> {
+  ensureFfmpegPaths();
+
   const { videoPath, clipId, exerciseType, workDir, sampleCount = 48 } = input;
 
   const framesDir = path.join(workDir, 'frames');

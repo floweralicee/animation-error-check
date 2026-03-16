@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -16,6 +17,7 @@ export default function VideoPlayer({
   totalFrames,
   onFrameChange,
 }: VideoPlayerProps) {
+  const { t } = useLocale();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -45,7 +47,7 @@ export default function VideoPlayer({
     const fontSize = Math.max(14, Math.floor(canvas.height / 20));
     ctx.font = `bold ${fontSize}px "SF Mono", "Fira Code", monospace`;
 
-    const text = `F ${frame}`;
+    const text = `${t('frameShort')} ${frame}`;
     const timeText = `${video.currentTime.toFixed(2)}s`;
 
     // Background pill
@@ -68,7 +70,7 @@ export default function VideoPlayer({
 
     setCurrentFrame(frame);
     onFrameChange?.(frame);
-  }, [fps, timeToFrame, onFrameChange]);
+  }, [fps, timeToFrame, onFrameChange, t]);
 
   // Animation loop for overlay
   const updateLoop = useCallback(() => {
@@ -161,17 +163,17 @@ export default function VideoPlayer({
 
       {/* Controls */}
       <div className="video-controls">
-        <button className="video-btn" onClick={() => stepFrame(-1)} title="Previous frame">
+        <button className="video-btn" onClick={() => stepFrame(-1)} title={t('previousFrame')}>
           ◂
         </button>
         <button className="video-btn video-btn-play" onClick={togglePlay}>
           {playing ? '⏸' : '▶'}
         </button>
-        <button className="video-btn" onClick={() => stepFrame(1)} title="Next frame">
+        <button className="video-btn" onClick={() => stepFrame(1)} title={t('nextFrame')}>
           ▸
         </button>
         <span className="video-frame-display">
-          Frame <strong>{currentFrame}</strong> / {totalFrames}
+          {t('framesLabel')} <strong>{currentFrame}</strong> / {totalFrames}
         </span>
       </div>
     </div>

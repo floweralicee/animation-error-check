@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { AnalysisOutput } from '@/lib/types';
+import { useLocale } from '@/components/LocaleProvider';
+import { ZONE_DISPLAY_KEYS, CATEGORY_KEYS, SEVERITY_KEYS } from '@/lib/i18n';
 import VideoPlayer from './VideoPlayer';
 import IssueTimeline from './IssueTimeline';
 import PrincipleCard from './PrincipleCard';
@@ -15,6 +17,7 @@ interface ResultsViewProps {
 }
 
 export default function ResultsView({ result, keyframePreviews, videoUrl }: ResultsViewProps) {
+  const { t } = useLocale();
   const [currentFrame, setCurrentFrame] = useState(0);
   const [displayFps, setDisplayFps] = useState(result.metadata.fps || 24);
 
@@ -40,7 +43,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
     <div>
       {/* Overall Score */}
       <div className="card text-center">
-        <h2>Overall Animation Score</h2>
+        <h2>{t('overallScore')}</h2>
         <div className={`overall-score ${scoreColor}`}>
           {Math.round(result.overall_score * 100)}
         </div>
@@ -49,16 +52,16 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
 
       {/* Summary */}
       <div className="card">
-        <h2>Summary</h2>
+        <h2>{t('summary')}</h2>
         <p>{result.summary}</p>
       </div>
 
       {/* === MAIN FEATURE: Video Player + Issue Timeline === */}
       <div className="card video-analysis-card">
         <div className="video-analysis-header">
-          <h2>Shot Review</h2>
+          <h2>{t('shotReview')}</h2>
           <div className="fps-selector">
-            <label htmlFor="display-fps">Playback</label>
+            <label htmlFor="display-fps">{t('playback')}</label>
             <select
               id="display-fps"
               value={displayFps}
@@ -89,7 +92,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
       {/* Top Priorities */}
       {result.top_priorities && result.top_priorities.length > 0 && (
         <div className="card">
-          <h2>🎯 Top Priorities</h2>
+          <h2>🎯 {t('topPriorities')}</h2>
           <ol className="top-priorities">
             {result.top_priorities.map((p, i) => (
               <li key={i}>{p}</li>
@@ -100,30 +103,30 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
 
       {/* Metadata */}
       <div className="card">
-        <h2>Video Metadata</h2>
+        <h2>{t('videoMetadata')}</h2>
         <div className="meta-grid">
           <div className="meta-item">
-            <label>FPS</label>
+            <label>{t('fps')}</label>
             <div className="value">{result.metadata.fps}</div>
           </div>
           <div className="meta-item">
-            <label>Duration</label>
-            <div className="value">{result.metadata.duration_sec}s</div>
+            <label>{t('duration')}</label>
+            <div className="value">{result.metadata.duration_sec}{t('secondsUnit')}</div>
           </div>
           <div className="meta-item">
-            <label>Resolution</label>
+            <label>{t('resolution')}</label>
             <div className="value">{result.metadata.width}×{result.metadata.height}</div>
           </div>
           <div className="meta-item">
-            <label>Frames</label>
+            <label>{t('frames')}</label>
             <div className="value">{result.metadata.frame_count}</div>
           </div>
           <div className="meta-item">
-            <label>Sampled</label>
+            <label>{t('sampled')}</label>
             <div className="value">{result.analysis.sampled_frames}</div>
           </div>
           <div className="meta-item">
-            <label>Motion Frames</label>
+            <label>{t('motionFrames')}</label>
             <div className="value">{result.motion_profile.total_motion_frames}</div>
           </div>
         </div>
@@ -140,21 +143,23 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
       {/* Body Zone Profiles */}
       {result.zone_profiles && result.zone_profiles.length > 0 && (
         <div className="card">
-          <h2>Body Zone Motion</h2>
+          <h2>{t('bodyZoneMotion')}</h2>
           <div className="zone-profiles-grid">
             {result.zone_profiles.map((z) => (
               <div key={z.zone} className="zone-profile-item">
-                <div className="zone-name">{z.display_name}</div>
+                <div className="zone-name">
+                  {ZONE_DISPLAY_KEYS[z.zone] ? t(ZONE_DISPLAY_KEYS[z.zone]) : z.display_name}
+                </div>
                 <div className="zone-stat">
-                  <span>Avg</span>
+                  <span>{t('avg')}</span>
                   <span className="val">{z.average_displacement.toFixed(1)}px</span>
                 </div>
                 <div className="zone-stat">
-                  <span>Peak</span>
+                  <span>{t('peak')}</span>
                   <span className="val">{z.max_displacement.toFixed(1)}px</span>
                 </div>
                 <div className="zone-stat">
-                  <span>Motion</span>
+                  <span>{t('motion')}</span>
                   <span className="val">{z.motion_frame_count}f</span>
                 </div>
               </div>
@@ -166,7 +171,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
       {/* 12 Principles Analysis */}
       {result.principles_analysis && result.principles_analysis.length > 0 && (
         <div className="card">
-          <h2>12 Principles of Animation</h2>
+          <h2>{t('twelvePrinciples')}</h2>
           <div className="principles-grid">
             {result.principles_analysis.map((p) => (
               <PrincipleCard key={p.principle} principle={p} />
@@ -183,13 +188,17 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
       {/* Legacy Issues */}
       {result.issues.length > 0 && (
         <div className="card">
-          <h2>Pixel-Level Issues ({result.issues.length})</h2>
+          <h2>{t('pixelLevelIssues')} ({result.issues.length})</h2>
           <ul className="issue-list">
             {result.issues.map((issue, i) => (
               <li key={i} className={`issue-item ${issue.severity}`}>
-                <span className={`badge ${issue.severity}`}>{issue.severity}</span>
-                <strong>{issue.category.replace(/_/g, ' ')}</strong>
-                {' '}— Frames {issue.frame_range[0]}–{issue.frame_range[1]}
+                <span className={`badge ${issue.severity}`}>
+                  {t(SEVERITY_KEYS[issue.severity] || 'severityHigh')}
+                </span>
+                <strong>
+                  {CATEGORY_KEYS[issue.category] ? t(CATEGORY_KEYS[issue.category]) : issue.category.replace(/_/g, ' ')}
+                </strong>
+                {' '}— {t('framesLabel')} {issue.frame_range[0]}–{issue.frame_range[1]}
                 <br />
                 <span className="text-text-muted">{issue.note}</span>
               </li>

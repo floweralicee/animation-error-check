@@ -2,6 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import { PrincipleAnalysis, PrincipleIssue, ToolSuggestion } from '@/lib/types';
+import { useLocale } from '@/components/LocaleProvider';
+import { PRINCIPLE_DISPLAY_KEYS, SEVERITY_KEYS, type TranslationKeys } from '@/lib/i18n';
+
+const ZONE_KEYS: Record<string, TranslationKeys> = {
+  whole_body: 'zoneWholeBody',
+  head: 'zoneHeadShort',
+  chest: 'zoneChestShort',
+  left_arm: 'zoneLeftArmShort',
+  right_arm: 'zoneRightArmShort',
+  core: 'zoneCoreShort',
+  left_leg: 'zoneLeftLegShort',
+  right_leg: 'zoneRightLegShort',
+};
 
 interface IssueTimelineProps {
   principlesAnalysis: PrincipleAnalysis[];
@@ -26,17 +39,6 @@ const SEVERITY_COLORS: Record<string, string> = {
   low: '#6b6b8a',
 };
 
-const ZONE_LABELS: Record<string, string> = {
-  whole_body: '🦴 Whole Body',
-  head: '🔵 Head',
-  chest: '🟢 Chest',
-  left_arm: '🟡 L. Arm',
-  right_arm: '🟠 R. Arm',
-  core: '🟣 Core',
-  left_leg: '🔴 L. Leg',
-  right_leg: '🟤 R. Leg',
-};
-
 export default function IssueTimeline({
   principlesAnalysis,
   totalFrames,
@@ -44,6 +46,7 @@ export default function IssueTimeline({
   currentFrame,
   onSeekToFrame,
 }: IssueTimelineProps) {
+  const { t } = useLocale();
   const [activeDot, setActiveDot] = useState<TimelineDot | null>(null);
   const [showTools, setShowTools] = useState(false);
 
@@ -51,6 +54,9 @@ export default function IssueTimeline({
   const dots = useMemo(() => {
     const result: TimelineDot[] = [];
     for (const p of principlesAnalysis) {
+      const displayName = PRINCIPLE_DISPLAY_KEYS[p.principle]
+        ? t(PRINCIPLE_DISPLAY_KEYS[p.principle])
+        : p.display_name;
       for (const issue of p.issues) {
         // Place dot at the midpoint of the issue frame range
         const midFrame = Math.round((issue.frame_start + issue.frame_end) / 2);
@@ -59,7 +65,7 @@ export default function IssueTimeline({
           pct: totalFrames > 0 ? (midFrame / totalFrames) * 100 : 0,
           severity: issue.severity,
           principle: p.principle,
-          displayName: p.display_name,
+          displayName,
           issue,
         });
       }
@@ -67,7 +73,7 @@ export default function IssueTimeline({
     // Sort by frame
     result.sort((a, b) => a.frame - b.frame);
     return result;
-  }, [principlesAnalysis, totalFrames]);
+  }, [principlesAnalysis, totalFrames, t]);
 
   // Deduplicate dots that are too close (within 2% of each other)
   const visibleDots = useMemo(() => {
@@ -132,26 +138,26 @@ export default function IssueTimeline({
 
       {/* Summary line */}
       <div className="timeline-summary">
-        {dots.length} issue{dots.length !== 1 ? 's' : ''} detected
+        {dots.length} {t('issuesDetected')}
         {dots.filter((d) => d.severity === 'high').length > 0 &&
-          ` · ${dots.filter((d) => d.severity === 'high').length} high`}
+          ` · ${dots.filter((d) => d.severity === 'high').length} ${t('high')}`}
         {dots.filter((d) => d.severity === 'medium').length > 0 &&
-          ` · ${dots.filter((d) => d.severity === 'medium').length} medium`}
+          ` · ${dots.filter((d) => d.severity === 'medium').length} ${t('medium')}`}
       </div>
 
       {/* Active issue detail */}
       {activeDot && (
         <div className={`timeline-issue-detail ${activeDot.severity}`}>
           <div className="timeline-issue-header">
-            <span className={`badge ${activeDot.severity}`}>{activeDot.severity}</span>
+            <span className={`badge ${activeDot.severity}`}>{t(SEVERITY_KEYS[activeDot.severity] || 'severityHigh')}</span>
             <span className="timeline-issue-principle">{activeDot.displayName}</span>
             {activeDot.issue.body_zone_display && (
               <span className="zone-label">
-                {ZONE_LABELS[activeDot.issue.body_zone || ''] || activeDot.issue.body_zone_display}
+                {ZONE_KEYS[activeDot.issue.body_zone || ''] ? t(ZONE_KEYS[activeDot.issue.body_zone || '']) : activeDot.issue.body_zone_display}
               </span>
             )}
             <span className="issue-frames">
-              Frames {activeDot.issue.frame_start}–{activeDot.issue.frame_end}
+              {t('framesLabel')} {activeDot.issue.frame_start}–{activeDot.issue.frame_end}
             </span>
             <button className="timeline-close" onClick={handleClose}>✕</button>
           </div>
@@ -166,7 +172,7 @@ export default function IssueTimeline({
                 className="tool-toggle"
                 onClick={() => setShowTools(!showTools)}
               >
-                🔧 {showTools ? 'Hide' : 'Show'} animBot tools ({activeDot.issue.tool_suggestions.length})
+                🔧 {showTools ? t('hide') : t('show')} {t('animBotTools')} ({activeDot.issue.tool_suggestions.length})
               </button>
               {showTools && (
                 <div className="tool-suggestions">
@@ -180,7 +186,7 @@ export default function IssueTimeline({
                       </div>
                       <p className="tool-desc">{tool.description}</p>
                       <div className="tool-workflow">
-                        <strong>How to fix:</strong>
+                        <strong>{t('howToFix')}</strong>
                         <p>{tool.workflow}</p>
                       </div>
                     </div>
@@ -195,16 +201,16 @@ export default function IssueTimeline({
             <button
               className="video-btn"
               onClick={() => onSeekToFrame(activeDot.issue.frame_start)}
-              title="Go to issue start"
+              title={t('goToIssueStart')}
             >
-              ◂ Frame {activeDot.issue.frame_start}
+              ◂ {t('framesLabel')} {activeDot.issue.frame_start}
             </button>
             <button
               className="video-btn"
               onClick={() => onSeekToFrame(activeDot.issue.frame_end)}
-              title="Go to issue end"
+              title={t('goToIssueEnd')}
             >
-              Frame {activeDot.issue.frame_end} ▸
+              {t('framesLabel')} {activeDot.issue.frame_end} ▸
             </button>
           </div>
         </div>
