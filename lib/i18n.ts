@@ -53,6 +53,7 @@ export const translations = {
       'Connection failed. Make sure the dev server is running (npm run dev) and try again.',
     somethingWentWrong: 'Something went wrong',
     serverError: 'Server error',
+    fileTooLarge: 'File too large. Max size: 4.5MB on Vercel. Try a smaller video.',
 
     // Results
     overallScore: 'Overall Animation Score',
@@ -188,6 +189,7 @@ export const translations = {
       '连接失败。请确保开发服务器已启动（npm run dev）后重试。',
     somethingWentWrong: '出了点问题',
     serverError: '服务器错误',
+    fileTooLarge: '文件过大。Vercel 限制为 4.5MB，请上传更小的视频。',
 
     // Results
     overallScore: '动画综合评分',

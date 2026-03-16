@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { buildMotionProfile } from '@/lib/analysis/motionProfile';
 import { computeAllMotionVectors } from '@/lib/analysis/motionVectors';
+import { del } from '@vercel/blob';
 
 // Vercel serverless: only /tmp is writable
 const UPLOAD_DIR =
@@ -16,38 +17,68 @@ const VALID_EXERCISES: ExerciseType[] = ['auto', 'bouncing_ball', 'walk_cycle', 
 export async function POST(request: NextRequest) {
   const jobId = uuidv4();
   const workDir = path.join(UPLOAD_DIR, jobId);
+  let blobUrlToDelete: string | null = null;
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('video') as File | null;
-    const exerciseRaw = (formData.get('exercise_type') as string) || 'auto';
+    const contentType = request.headers.get('content-type') ?? '';
+    let videoPath: string;
+    let clipId: string;
+    let exerciseType: ExerciseType;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
+    if (contentType.includes('application/json')) {
+      // Blob flow: client uploaded to Vercel Blob, passed URL
+      const body = await request.json();
+      const { videoUrl, exercise_type: exerciseRaw } = body as {
+        videoUrl?: string;
+        exercise_type?: string;
+      };
+      if (!videoUrl) {
+        return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
+      }
+      blobUrlToDelete = videoUrl;
+      clipId = path.basename(new URL(videoUrl).pathname) || 'video';
+      exerciseType = VALID_EXERCISES.includes((exerciseRaw || 'auto') as ExerciseType)
+        ? (exerciseRaw as ExerciseType)
+        : 'auto';
+
+      const res = await fetch(videoUrl);
+      if (!res.ok) {
+        return NextResponse.json({ error: 'Failed to fetch video from blob' }, { status: 400 });
+      }
+      const arrayBuffer = await res.arrayBuffer();
+      await fs.mkdir(workDir, { recursive: true });
+      videoPath = path.join(workDir, clipId);
+      await fs.writeFile(videoPath, Buffer.from(arrayBuffer));
+    } else {
+      // FormData flow: direct file upload (for small files or local dev)
+      const formData = await request.formData();
+      const file = formData.get('video') as File | null;
+      const exerciseRaw = (formData.get('exercise_type') as string) || 'auto';
+
+      if (!file) {
+        return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
+      }
+      if (file.size > MAX_SIZE) {
+        return NextResponse.json(
+          { error: `File too large. Max size: ${MAX_SIZE / 1024 / 1024}MB` },
+          { status: 400 }
+        );
+      }
+      exerciseType = VALID_EXERCISES.includes(exerciseRaw as ExerciseType)
+        ? (exerciseRaw as ExerciseType)
+        : 'auto';
+      clipId = file.name;
+      await fs.mkdir(workDir, { recursive: true });
+      videoPath = path.join(workDir, file.name);
+      const arrayBuffer = await file.arrayBuffer();
+      await fs.writeFile(videoPath, Buffer.from(arrayBuffer));
     }
-
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json(
-        { error: `File too large. Max size: ${MAX_SIZE / 1024 / 1024}MB` },
-        { status: 400 }
-      );
-    }
-
-    const exerciseType: ExerciseType = VALID_EXERCISES.includes(exerciseRaw as ExerciseType)
-      ? (exerciseRaw as ExerciseType)
-      : 'auto';
-
-    // Save uploaded file
-    await fs.mkdir(workDir, { recursive: true });
-    const videoPath = path.join(workDir, file.name);
-    const arrayBuffer = await file.arrayBuffer();
-    await fs.writeFile(videoPath, Buffer.from(arrayBuffer));
 
     // Run analysis pipeline
     const sampleCount = parseInt(process.env.SAMPLE_FRAME_COUNT || '48', 10);
     const result = await runAnalysisPipeline({
       videoPath,
-      clipId: file.name,
+      clipId,
       exerciseType,
       workDir,
       sampleCount,
@@ -109,6 +140,14 @@ export async function POST(request: NextRequest) {
     console.error('Analysis failed:', message);
     return NextResponse.json({ error: `Analysis failed: ${message}` }, { status: 500 });
   } finally {
+    // Delete blob from Vercel Blob storage after analysis (when using blob flow)
+    if (blobUrlToDelete) {
+      try {
+        await del(blobUrlToDelete);
+      } catch (e) {
+        console.warn('Blob delete failed (best-effort):', e);
+      }
+    }
     setTimeout(async () => {
       try {
         await fs.rm(workDir, { recursive: true, force: true });

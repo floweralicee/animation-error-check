@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { AnalysisOutput } from '@/lib/types';
 
-interface AnalysisResponse extends AnalysisOutput {
+export interface AnalysisResponse extends AnalysisOutput {
   keyframe_previews?: string[];
   motion_profile_detail?: { frame: number; displacement: number; isHold: boolean }[];
 }

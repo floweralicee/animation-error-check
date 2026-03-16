@@ -1,10 +1,11 @@
 'use client';
 
+import { upload } from '@vercel/blob/client';
 import UploadForm from '@/components/UploadForm';
 import ResultsView from '@/components/ResultsView';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLocale } from '@/components/LocaleProvider';
-import { useAnalysis } from '@/components/AnalysisProvider';
+import { useAnalysis, type AnalysisResponse } from '@/components/AnalysisProvider';
 
 export default function Home() {
   const { t } = useLocale();
@@ -28,22 +29,36 @@ export default function Home() {
     setVideoUrl(blobUrl);
 
     try {
-      const formData = new FormData();
-      formData.append('video', file);
-      formData.append('exercise_type', exerciseType);
+      // Upload to Vercel Blob for large files (>4.5MB)
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob-upload',
+      });
 
       const response = await fetch('/api/analyze', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: blob.url, exercise_type: exerciseType }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') ?? '';
+      const text = await response.text();
+
+      let data: { error?: string };
+      try {
+        data = text && contentType.includes('application/json') ? JSON.parse(text) : {};
+      } catch {
+        if (response.status === 413 || text.includes('Request Entity') || text.includes('Payload Too Large')) {
+          throw new Error(t('fileTooLarge') || 'File too large. Max size: 4.5MB on Vercel. Try a smaller video.');
+        }
+        throw new Error(t('serverError') || 'Server returned an invalid response.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || `${t('serverError')}: ${response.status}`);
       }
 
-      setResult(data);
+      setResult(data as AnalysisResponse);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('somethingWentWrong');
       const isConnectionError =

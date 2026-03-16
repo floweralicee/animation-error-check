@@ -19,7 +19,9 @@ interface ResultsViewProps {
 export default function ResultsView({ result, keyframePreviews, videoUrl }: ResultsViewProps) {
   const { t } = useLocale();
   const [currentFrame, setCurrentFrame] = useState(0);
-  const [displayFps, setDisplayFps] = useState(result.metadata.fps || 24);
+  const [displayFps, setDisplayFps] = useState(
+    result.metadata.fps === 24 || result.metadata.fps === 60 ? result.metadata.fps : 24
+  );
 
   const scoreColor =
     result.overall_score >= 0.7
@@ -75,15 +77,15 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
 
         <VideoPlayer
           videoUrl={videoUrl}
-          fps={displayFps}
-          totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
+          fps={result.metadata.fps}
+          totalFrames={result.metadata.frame_count}
           onFrameChange={handleFrameChange}
         />
 
         <IssueTimeline
           principlesAnalysis={result.principles_analysis}
-          totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
-          fps={displayFps}
+          totalFrames={result.metadata.frame_count}
+          fps={result.metadata.fps}
           currentFrame={currentFrame}
           onSeekToFrame={handleSeekToFrame}
         />
