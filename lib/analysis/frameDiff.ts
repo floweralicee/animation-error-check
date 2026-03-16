@@ -9,22 +9,24 @@ import { FrameDiffResult } from '../types';
  */
 export async function computeFrameDiffs(
   framePaths: string[],
-  frameNumbers: number[]
+  frameNumbers: number[],
+  preloadedBuffers?: Buffer[]
 ): Promise<FrameDiffResult[]> {
   if (framePaths.length < 2) return [];
 
   const results: FrameDiffResult[] = [];
 
-  // Pre-load all frames as raw pixel buffers (grayscale for speed)
-  const buffers: Buffer[] = [];
-  for (const fp of framePaths) {
-    const { data } = await sharp(fp)
-      .grayscale()
-      .resize(320, 240, { fit: 'fill' }) // normalize size for fair comparison
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    buffers.push(data);
-  }
+  // Use preloaded buffers if provided, otherwise decode from disk
+  const buffers: Buffer[] = preloadedBuffers ?? await Promise.all(
+    framePaths.map(async (fp) => {
+      const { data } = await sharp(fp)
+        .grayscale()
+        .resize(320, 240, { fit: 'fill' })
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      return data;
+    })
+  );
 
   for (let i = 0; i < buffers.length - 1; i++) {
     const a = buffers[i];

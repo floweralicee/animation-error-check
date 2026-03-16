@@ -147,6 +147,8 @@ export interface AnalysisOutput {
   issues: Issue[];
   confidence_notes: string[];
   keyframe_paths?: string[];
+  /** Per-frame motion data for the motion profile chart */
+  motion_profile_detail?: { frame: number; displacement: number; isHold: boolean }[];
 }
 
 export interface PipelineInput {
@@ -155,4 +157,6 @@ export interface PipelineInput {
   exerciseType: ExerciseType;
   workDir: string;
   sampleCount?: number;
+  /** When true, sample all frames (bypasses Vercel/local caps). For testing. */
+  useAllFrames?: boolean;
 }

@@ -6,7 +6,7 @@ import { isMatAnyone2Available, generateAutoMask, runMatAnyone2 } from '../video
 import { extractForeground, loadMatAnyone2Foreground, ForegroundResult } from '../video/foreground';
 import { computeFrameDiffs, findLargestChanges } from './frameDiff';
 import { computeBrightness } from './brightness';
-import { computeAllMotionVectors } from './motionVectors';
+import { computeAllMotionVectors, loadGrayscaleBuffer } from './motionVectors';
 import { buildMotionProfile } from './motionProfile';
 import { extractZoneMotionProfiles } from './bodyZones';
 import { analyzeAllPrinciples } from './principles';
@@ -34,7 +34,10 @@ import fs from 'fs/promises';
 export async function runAnalysisPipeline(input: PipelineInput): Promise<AnalysisOutput> {
   ensureFfmpegPaths();
 
-  const { videoPath, clipId, exerciseType, workDir, sampleCount = 48 } = input;
+  const { videoPath, clipId, exerciseType, workDir, sampleCount = 48, useAllFrames = false } = input;
+
+  const isVercel = !!process.env.VERCEL;
+  const hardCap = isVercel ? 16 : 24;
 
   const framesDir = path.join(workDir, 'frames');
   await fs.mkdir(framesDir, { recursive: true });
@@ -42,12 +45,12 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
   // Step 1: Extract metadata
   const metadata = await extractMetadata(videoPath);
 
-  // Step 2: Sample frames (denser for principle analysis)
-  const effectiveSampleCount = metadata.frame_count < 100
+  // Step 2: Sample frames — cap tightly on Vercel to stay within 60s function limit (unless useAllFrames)
+  const effectiveSampleCount = useAllFrames
     ? metadata.frame_count
-    : metadata.frame_count < 200
-      ? Math.ceil(metadata.frame_count / 2)
-      : sampleCount;
+    : metadata.frame_count < hardCap
+      ? metadata.frame_count
+      : Math.min(sampleCount, hardCap);
 
   const { paths: framePaths, frameNumbers } = await sampleFrames(
     videoPath,
@@ -60,66 +63,63 @@ export async function runAnalysisPipeline(input: PipelineInput): Promise<Analysi
     throw new Error('No frames could be extracted from the video.');
   }
 
-  // Step 3: Extract keyframes (I-frames)
-  let keyframePaths: string[] = [];
-  try {
-    keyframePaths = await extractKeyframes(videoPath, workDir, 8);
-  } catch {
-    keyframePaths = [];
-  }
+  // Preload all frames once as grayscale buffers — shared across foreground, diffs, brightness, BMA
+  const sharedBuffers = await Promise.all(framePaths.map(loadGrayscaleBuffer));
 
-  // Step 4: Foreground segmentation
+  // Step 3: Extract keyframes (I-frames) — run in parallel with foreground segmentation
+  let keyframePaths: string[] = [];
   let foreground: ForegroundResult | null = null;
   let foregroundMethod: 'matanyone2' | 'temporal_diff' | 'none' = 'none';
 
-  try {
-    const matAvailable = await isMatAnyone2Available();
+  const [keyframeResult, foregroundResult] = await Promise.allSettled([
+    isVercel ? Promise.resolve([]) : extractKeyframes(videoPath, workDir, 8),
+    (async (): Promise<{ fg: ForegroundResult; method: 'matanyone2' | 'temporal_diff' }> => {
+      const matAvailable = await isMatAnyone2Available();
 
-    if (matAvailable) {
-      // Generate auto-mask from temporal differencing of first frames
-      console.log('MatAnyone2 available — generating auto-mask...');
-      const maskPath = await generateAutoMask(framePaths, workDir, metadata.width, metadata.height);
+      if (matAvailable) {
+        console.log('MatAnyone2 available — generating auto-mask...');
+        const maskPath = await generateAutoMask(framePaths, workDir, metadata.width, metadata.height);
+        console.log('Running MatAnyone2 foreground extraction...');
+        const matResult = await runMatAnyone2(videoPath, maskPath, workDir);
 
-      // Run MatAnyone2
-      console.log('Running MatAnyone2 foreground extraction...');
-      const matResult = await runMatAnyone2(videoPath, maskPath, workDir);
-
-      if (matResult.success) {
-        foreground = await loadMatAnyone2Foreground(
-          matResult.fgrDir,
-          matResult.phaDir,
-          framePaths.length
-        );
-        foregroundMethod = 'matanyone2';
-        console.log('MatAnyone2 foreground extraction complete.');
+        if (matResult.success) {
+          const fg = await loadMatAnyone2Foreground(matResult.fgrDir, matResult.phaDir, framePaths.length);
+          console.log('MatAnyone2 foreground extraction complete.');
+          return { fg, method: 'matanyone2' };
+        }
       }
-    }
 
-    // Fallback to temporal differencing if MatAnyone2 not available or failed
-    if (!foreground) {
       console.log('Using temporal-diff foreground segmentation...');
-      foreground = await extractForeground(framePaths);
-      foregroundMethod = 'temporal_diff';
-    }
-  } catch (err) {
-    console.warn('Foreground segmentation failed, proceeding without:', err);
-    foregroundMethod = 'none';
+      const fg = await extractForeground(framePaths, sharedBuffers);
+      return { fg, method: 'temporal_diff' };
+    })(),
+  ]);
+
+  if (keyframeResult.status === 'fulfilled') {
+    keyframePaths = keyframeResult.value;
   }
 
-  // Step 5: Compute frame diffs (legacy — still uses raw frames)
-  const diffs = await computeFrameDiffs(framePaths, frameNumbers);
+  if (foregroundResult.status === 'fulfilled') {
+    foreground = foregroundResult.value.fg;
+    foregroundMethod = foregroundResult.value.method;
+  } else {
+    console.warn('Foreground segmentation failed, proceeding without:', foregroundResult.reason);
+  }
 
-  // Step 6: Compute brightness
-  const brightness = await computeBrightness(framePaths, frameNumbers);
+  // Steps 5 & 6: Compute frame diffs and brightness in parallel — both use sharedBuffers
+  const [diffs, brightness] = await Promise.all([
+    computeFrameDiffs(framePaths, frameNumbers, sharedBuffers),
+    computeBrightness(framePaths, frameNumbers, sharedBuffers),
+  ]);
 
   // Step 7: Find largest changes (legacy)
   const largestChangeFrames = findLargestChanges(diffs, 4);
 
-  // Step 8: Compute motion vectors (foreground-masked if available)
+  // Step 8: Compute motion vectors — use masked frames if available, otherwise fall back to sharedBuffers
   const motionVectors = await computeAllMotionVectors(
     framePaths,
     frameNumbers,
-    foreground?.maskedFrames,
+    foreground?.maskedFrames ?? sharedBuffers,
     foreground?.masks
   );
 

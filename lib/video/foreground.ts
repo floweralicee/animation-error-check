@@ -19,79 +19,80 @@ const FG_THRESHOLD = 20; // pixel diff from background model = foreground
 
 /**
  * Build a background model from sampled frames using per-pixel median.
- * More robust than mean (handles occasional foreground in any single frame).
+ * Accepts preloaded grayscale buffers to avoid redundant disk reads.
  */
 async function buildBackgroundModel(
-  framePaths: string[]
+  framePaths: string[],
+  preloadedBuffers?: Buffer[]
 ): Promise<Buffer> {
   // Sample up to 8 frames spread across the clip
   const step = Math.max(1, Math.floor(framePaths.length / 8));
-  const samplePaths = framePaths.filter((_, i) => i % step === 0).slice(0, 8);
+  const sampleIndices = framePaths
+    .map((_, i) => i)
+    .filter((i) => i % step === 0)
+    .slice(0, 8);
 
-  const buffers: Buffer[] = [];
-  for (const fp of samplePaths) {
-    const { data } = await sharp(fp)
-      .grayscale()
-      .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    buffers.push(data);
+  let buffers: Buffer[];
+  if (preloadedBuffers) {
+    buffers = sampleIndices.map((i) => preloadedBuffers[i]);
+  } else {
+    buffers = await Promise.all(
+      sampleIndices.map(async (i) => {
+        const { data } = await sharp(framePaths[i])
+          .grayscale()
+          .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        return data;
+      })
+    );
   }
 
   const pixelCount = ANALYSIS_WIDTH * ANALYSIS_HEIGHT;
   const bgModel = Buffer.alloc(pixelCount);
+  const tmp = new Uint8Array(buffers.length);
 
   for (let p = 0; p < pixelCount; p++) {
-    // Median of this pixel across all samples
-    const values = buffers.map((buf) => buf[p]).sort((a, b) => a - b);
-    bgModel[p] = values[Math.floor(values.length / 2)];
+    for (let k = 0; k < buffers.length; k++) tmp[k] = buffers[k][p];
+    tmp.sort();
+    bgModel[p] = tmp[Math.floor(buffers.length / 2)];
   }
 
   return bgModel;
 }
 
 /**
- * Generate foreground mask for a single frame.
- * Returns a binary mask buffer (0 or 255) at analysis resolution.
+ * Generate foreground mask and masked frame in a single pass from a preloaded buffer.
+ * Returns both the binary mask and the masked grayscale frame.
  */
-async function generateForegroundMask(
-  framePath: string,
+function processFrameBuffer(
+  frameBuffer: Buffer,
   bgModel: Buffer
-): Promise<Buffer> {
-  const { data } = await sharp(framePath)
-    .grayscale()
-    .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+): { mask: Buffer; masked: Buffer; ratio: number } {
+  const mask = Buffer.alloc(frameBuffer.length);
+  const masked = Buffer.alloc(frameBuffer.length);
+  let fgPixels = 0;
 
-  const mask = Buffer.alloc(data.length);
-  for (let i = 0; i < data.length; i++) {
-    mask[i] = Math.abs(data[i] - bgModel[i]) > FG_THRESHOLD ? 255 : 0;
+  for (let i = 0; i < frameBuffer.length; i++) {
+    const isFg = Math.abs(frameBuffer[i] - bgModel[i]) > FG_THRESHOLD;
+    mask[i] = isFg ? 255 : 0;
+    masked[i] = isFg ? frameBuffer[i] : 0;
+    if (isFg) fgPixels++;
   }
 
-  return mask;
+  return { mask, masked, ratio: Math.round((fgPixels / frameBuffer.length) * 1000) / 1000 };
 }
 
 /**
- * Apply foreground mask to a frame — zero out background pixels.
- * Returns a masked grayscale frame at analysis resolution.
+ * Load a single frame as a grayscale buffer at analysis resolution.
  */
-async function applyMask(
-  framePath: string,
-  mask: Buffer
-): Promise<Buffer> {
+async function loadFrameBuffer(framePath: string): Promise<Buffer> {
   const { data } = await sharp(framePath)
     .grayscale()
     .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
     .raw()
     .toBuffer({ resolveWithObject: true });
-
-  const masked = Buffer.alloc(data.length);
-  for (let i = 0; i < data.length; i++) {
-    masked[i] = mask[i] > 0 ? data[i] : 0;
-  }
-
-  return masked;
+  return data;
 }
 
 export interface ForegroundResult {
@@ -109,40 +110,28 @@ export interface ForegroundResult {
 
 /**
  * Run temporal-differencing foreground segmentation on all frames.
+ * Accepts preloaded grayscale buffers to avoid redundant disk reads.
  */
 export async function extractForeground(
-  framePaths: string[]
+  framePaths: string[],
+  preloadedBuffers?: Buffer[]
 ): Promise<ForegroundResult> {
   if (framePaths.length < 2) {
     throw new Error('Need at least 2 frames for foreground extraction');
   }
 
-  const bgModel = await buildBackgroundModel(framePaths);
-  const masks: Buffer[] = [];
-  const maskedFrames: Buffer[] = [];
-  const fgRatios: number[] = [];
+  // Load all frame buffers once if not preloaded
+  const frameBuffers = preloadedBuffers ?? await Promise.all(framePaths.map(loadFrameBuffer));
 
-  for (const fp of framePaths) {
-    const mask = await generateForegroundMask(fp, bgModel);
-    const masked = await applyMask(fp, mask);
+  const bgModel = await buildBackgroundModel(framePaths, frameBuffers);
 
-    // Compute foreground ratio
-    let fgPixels = 0;
-    for (let i = 0; i < mask.length; i++) {
-      if (mask[i] > 0) fgPixels++;
-    }
-    const ratio = fgPixels / mask.length;
-
-    masks.push(mask);
-    maskedFrames.push(masked);
-    fgRatios.push(Math.round(ratio * 1000) / 1000);
-  }
+  const results = frameBuffers.map((buf) => processFrameBuffer(buf, bgModel));
 
   return {
-    masks,
-    maskedFrames,
+    masks: results.map((r) => r.mask),
+    maskedFrames: results.map((r) => r.masked),
     bgModel,
-    fgRatios,
+    fgRatios: results.map((r) => r.ratio),
     method: 'temporal_diff',
   };
 }
@@ -160,46 +149,44 @@ export async function loadMatAnyone2Foreground(
   const phaFiles = (await fs.readdir(phaDir)).filter((f) => f.endsWith('.png')).sort();
 
   const count = Math.min(fgrFiles.length, phaFiles.length, frameCount);
-  const masks: Buffer[] = [];
-  const maskedFrames: Buffer[] = [];
-  const fgRatios: number[] = [];
 
-  for (let i = 0; i < count; i++) {
-    // Load alpha matte as mask
-    const { data: alphaBuf } = await sharp(path.join(phaDir, phaFiles[i]))
-      .grayscale()
-      .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+  const results = await Promise.all(
+    Array.from({ length: count }, async (_, i) => {
+      const [alphaBuf, fgrBuf] = await Promise.all([
+        sharp(path.join(phaDir, phaFiles[i]))
+          .grayscale()
+          .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+          .then(({ data }) => data),
+        sharp(path.join(fgrDir, fgrFiles[i]))
+          .grayscale()
+          .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+          .then(({ data }) => data),
+      ]);
 
-    // Threshold alpha to binary mask
-    const mask = Buffer.alloc(alphaBuf.length);
-    for (let p = 0; p < alphaBuf.length; p++) {
-      mask[p] = alphaBuf[p] > 128 ? 255 : 0;
-    }
+      const mask = Buffer.alloc(alphaBuf.length);
+      for (let p = 0; p < alphaBuf.length; p++) {
+        mask[p] = alphaBuf[p] > 128 ? 255 : 0;
+      }
 
-    // Load foreground frame
-    const { data: fgrBuf } = await sharp(path.join(fgrDir, fgrFiles[i]))
-      .grayscale()
-      .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+      const masked = Buffer.alloc(fgrBuf.length);
+      let fgPixels = 0;
+      for (let p = 0; p < fgrBuf.length; p++) {
+        masked[p] = mask[p] > 0 ? fgrBuf[p] : 0;
+        if (mask[p] > 0) fgPixels++;
+      }
 
-    // Apply mask to foreground
-    const masked = Buffer.alloc(fgrBuf.length);
-    for (let p = 0; p < fgrBuf.length; p++) {
-      masked[p] = mask[p] > 0 ? fgrBuf[p] : 0;
-    }
+      const ratio = Math.round((fgPixels / mask.length) * 1000) / 1000;
+      return { mask, masked, ratio };
+    })
+  );
 
-    let fgPixels = 0;
-    for (let p = 0; p < mask.length; p++) {
-      if (mask[p] > 0) fgPixels++;
-    }
-
-    masks.push(mask);
-    maskedFrames.push(masked);
-    fgRatios.push(Math.round((fgPixels / mask.length) * 1000) / 1000);
-  }
+  const masks = results.map((r) => r.mask);
+  const maskedFrames = results.map((r) => r.masked);
+  const fgRatios = results.map((r) => r.ratio);
 
   return {
     masks,

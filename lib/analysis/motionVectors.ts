@@ -1,15 +1,17 @@
 import sharp from 'sharp';
 import { FrameMotionVectors, MotionVector } from '../types';
 
-const ANALYSIS_WIDTH = 320;
-const ANALYSIS_HEIGHT = 240;
-const BLOCK_SIZE = 16;
-const SEARCH_RANGE = 8;
+const isVercel = !!process.env.VERCEL;
+
+const ANALYSIS_WIDTH  = isVercel ? 240 : 320;
+const ANALYSIS_HEIGHT = isVercel ? 180 : 240;
+const BLOCK_SIZE      = isVercel ? 20  : 16;
+const SEARCH_RANGE    = isVercel ? 3   : 4;
 
 /**
  * Load a frame as a grayscale raw pixel buffer at analysis resolution.
  */
-async function loadGrayscaleBuffer(framePath: string): Promise<Buffer> {
+export async function loadGrayscaleBuffer(framePath: string): Promise<Buffer> {
   const { data } = await sharp(framePath)
     .grayscale()
     .resize(ANALYSIS_WIDTH, ANALYSIS_HEIGHT, { fit: 'fill' })

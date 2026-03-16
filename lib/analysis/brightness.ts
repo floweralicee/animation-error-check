@@ -5,17 +5,30 @@ import { BrightnessStats } from '../types';
  * Compute per-frame mean brightness and overall stats.
  * Uses grayscale conversion — mean pixel value approximates perceived brightness.
  */
+function bufferMean(buf: Buffer): number {
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += buf[i];
+  return sum / buf.length;
+}
+
 export async function computeBrightness(
   framePaths: string[],
-  frameNumbers: number[]
+  frameNumbers: number[],
+  preloadedBuffers?: Buffer[]
 ): Promise<BrightnessStats> {
   const perFrame: { frame: number; mean: number }[] = [];
 
-  for (let i = 0; i < framePaths.length; i++) {
-    const stats = await sharp(framePaths[i]).grayscale().stats();
-    // stats.channels[0] is the grayscale channel
-    const mean = Math.round(stats.channels[0].mean * 100) / 100;
-    perFrame.push({ frame: frameNumbers[i], mean });
+  if (preloadedBuffers) {
+    for (let i = 0; i < preloadedBuffers.length; i++) {
+      const mean = Math.round(bufferMean(preloadedBuffers[i]) * 100) / 100;
+      perFrame.push({ frame: frameNumbers[i], mean });
+    }
+  } else {
+    for (let i = 0; i < framePaths.length; i++) {
+      const stats = await sharp(framePaths[i]).grayscale().stats();
+      const mean = Math.round(stats.channels[0].mean * 100) / 100;
+      perFrame.push({ frame: frameNumbers[i], mean });
+    }
   }
 
   const means = perFrame.map((f) => f.mean);

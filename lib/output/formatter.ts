@@ -61,5 +61,10 @@ export function formatOutput(input: FormatterInput): AnalysisOutput {
     issues: input.legacyCritique.issues,
     confidence_notes: input.legacyCritique.confidenceNotes,
     keyframe_paths: input.keyframePaths.length > 0 ? input.keyframePaths : undefined,
+    motion_profile_detail: input.motionProfile.perFrame.map((f) => ({
+      frame: f.frame,
+      displacement: f.displacement,
+      isHold: f.isHold,
+    })),
   };
 }

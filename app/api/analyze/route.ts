@@ -4,8 +4,6 @@ import { ExerciseType } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs/promises';
-import { buildMotionProfile } from '@/lib/analysis/motionProfile';
-import { computeAllMotionVectors } from '@/lib/analysis/motionVectors';
 import { del } from '@vercel/blob';
 
 // Vercel serverless: only /tmp is writable
@@ -75,7 +73,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Run analysis pipeline
-    const sampleCount = parseInt(process.env.SAMPLE_FRAME_COUNT || '48', 10);
+    const sampleCount = parseInt(
+      process.env.SAMPLE_FRAME_COUNT || (process.env.VERCEL ? '16' : '48'),
+      10
+    );
     const result = await runAnalysisPipeline({
       videoPath,
       clipId,
@@ -101,39 +102,10 @@ export async function POST(request: NextRequest) {
       keyframePreviews = keyframePreviews.filter((p) => p.length > 0);
     }
 
-    // Include per-frame motion data for the motion profile chart
-    // We need to recompute this from the pipeline internals — grab it from the framesDir
-    const framesDir = path.join(workDir, 'frames');
-    let motionProfileDetail: { frame: number; displacement: number; isHold: boolean }[] = [];
-    try {
-      const frameFiles = await fs.readdir(framesDir);
-      const framePaths = frameFiles
-        .filter((f) => f.startsWith('frame_') && f.endsWith('.png'))
-        .sort()
-        .map((f) => path.join(framesDir, f));
-
-      if (framePaths.length >= 2) {
-        // Estimate frame numbers from metadata
-        const totalFrames = result.metadata.frame_count;
-        const interval = Math.max(1, Math.floor(totalFrames / framePaths.length));
-        const frameNumbers = framePaths.map((_, i) => i * interval);
-
-        const mvs = await computeAllMotionVectors(framePaths, frameNumbers);
-        const profile = buildMotionProfile(mvs, result.metadata);
-        motionProfileDetail = profile.perFrame.map((f) => ({
-          frame: f.frame,
-          displacement: f.displacement,
-          isHold: f.isHold,
-        }));
-      }
-    } catch {
-      // Motion profile detail is optional for the UI chart
-    }
-
     return NextResponse.json({
       ...result,
       keyframe_previews: keyframePreviews,
-      motion_profile_detail: motionProfileDetail,
+      motion_profile_detail: result.motion_profile_detail ?? [],
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
