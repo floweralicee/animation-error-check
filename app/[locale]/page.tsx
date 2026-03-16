@@ -1,6 +1,5 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
 import UploadForm from '@/components/UploadForm';
 import ResultsView from '@/components/ResultsView';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -28,26 +27,42 @@ export default function Home() {
     const blobUrl = URL.createObjectURL(file);
     setVideoUrl(blobUrl);
 
-    try {
-      // Upload to Vercel Blob for large files (>4.5MB)
-      const blob = await upload(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/blob-upload',
-      });
+    const useVercelBlob = process.env.NEXT_PUBLIC_USE_VERCEL_BLOB === 'true';
 
+    try {
       const abortController = new AbortController();
       const clientTimeoutId = setTimeout(() => abortController.abort(), 33_000);
 
       let response: Response;
-      try {
-        response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoUrl: blob.url, exercise_type: exerciseType }),
-          signal: abortController.signal,
+      if (useVercelBlob) {
+        const { upload } = await import('@vercel/blob/client');
+        const blob = await upload(file.name, file, {
+          access: 'public',
+          handleUploadUrl: '/api/blob-upload',
         });
-      } finally {
-        clearTimeout(clientTimeoutId);
+        try {
+          response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoUrl: blob.url, exercise_type: exerciseType }),
+            signal: abortController.signal,
+          });
+        } finally {
+          clearTimeout(clientTimeoutId);
+        }
+      } else {
+        const formData = new FormData();
+        formData.append('video', file);
+        formData.append('exercise_type', exerciseType);
+        try {
+          response = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData,
+            signal: abortController.signal,
+          });
+        } finally {
+          clearTimeout(clientTimeoutId);
+        }
       }
 
       const contentType = response.headers.get('content-type') ?? '';
