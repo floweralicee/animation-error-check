@@ -4,7 +4,7 @@ import { Providers } from '@/components/Providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Hana — Your Animation Helper',
+  title: 'Hana — Your 24/7 Animation Mentor',
   description: 'Upload animation clips and get frame-by-frame feedback on the 12 principles of animation.',
 };
 

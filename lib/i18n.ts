@@ -10,8 +10,8 @@ export const localeNames: Record<Locale, string> = {
 };
 
 export const pageTitles: Record<Locale, string> = {
-  en: 'Hana — Your Animation Helper',
-  zh: 'Hana — 你的动画小助手',
+  en: 'Hana — Your 24/7 Animation Mentor',
+  zh: 'Hana — 你的24/7动画导师',
 };
 
 export const pageDescriptions: Record<Locale, string> = {
@@ -22,7 +22,7 @@ export const pageDescriptions: Record<Locale, string> = {
 export const translations = {
   en: {
     // Hero
-    heroSubhead: 'Your trusted animation helper.',
+    heroSubhead: 'Your 24/7 animation mentor.',
     heroTagline:
       'Upload a clip, get frame-by-frame feedback on the 12 principles — so you know exactly what to fix next.',
     featureCheckShot: 'Check your shot',
@@ -157,7 +157,7 @@ export const translations = {
   },
   zh: {
     // Hero
-    heroSubhead: '你的动画小助手。',
+    heroSubhead: '你的24/7动画导师。',
     heroTagline:
       '传个片段上来，我们逐帧帮你看看 —— 哪里能更好，一眼就懂。',
     featureCheckShot: '检查你的镜头',

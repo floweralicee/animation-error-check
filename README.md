@@ -1,12 +1,19 @@
 <div align="center">
   <img src="public/logo.png" alt="Hana Logo" width="100" />
-  <h1>Hana — Your Animation Helper</h1>
+  <h1>Hana — Your 24/7 Animation Mentor</h1>
   <p><strong>Frame-by-frame feedback on the 12 principles of animation.</strong></p>
 
-  [![Live Demo](https://img.shields.io/badge/Live%20Demo-animation--error--check.onrender.com-pink?style=for-the-badge)](https://animation-error-check.onrender.com/)
-  [![GitHub](https://img.shields.io/badge/GitHub-floweralicee-181717?style=for-the-badge&logo=github)](https://github.com/floweralicee/animation-error-check)
-  [![LinkedIn](https://img.shields.io/badge/LinkedIn-Alice%20Chen-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/floweralice/)
-  [![Twitter](https://img.shields.io/badge/Twitter%20%2F%20X-flower__alicee-000000?style=for-the-badge&logo=x)](https://x.com/flower_alicee)
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/globe.svg" width="24" height="24" alt="Live Demo" />](https://animation-error-check.onrender.com/)
+  &nbsp;
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/discord.svg" width="24" height="24" alt="Discord" />](https://discord.gg/KKwgJYeE)
+  &nbsp;
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/gumroad.svg" width="24" height="24" alt="Gumroad" />](https://floweralicee.gumroad.com/l/hana)
+  &nbsp;
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/github.svg" width="24" height="24" alt="GitHub" />](https://github.com/floweralicee/animation-error-check)
+  &nbsp;
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg" width="24" height="24" alt="LinkedIn" />](https://www.linkedin.com/in/floweralice/)
+  &nbsp;
+  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/x.svg" width="24" height="24" alt="X" />](https://x.com/flower_alicee)
 </div>
 
 ---
