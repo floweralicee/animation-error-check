@@ -3,31 +3,12 @@
   <h1>Hana — Your 24/7 Animation Mentor</h1>
   <p><strong>Frame-by-frame feedback on the 12 principles of animation.</strong></p>
 
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/globe.svg" width="24" height="24" alt="Live Demo" />](https://animation-error-check.onrender.com/)
-  &nbsp;
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/discord.svg" width="24" height="24" alt="Discord" />](https://discord.gg/KKwgJYeE)
-  &nbsp;
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/gumroad.svg" width="24" height="24" alt="Gumroad" />](https://floweralicee.gumroad.com/l/hana)
-  &nbsp;
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/github.svg" width="24" height="24" alt="GitHub" />](https://github.com/floweralicee/animation-error-check)
-  &nbsp;
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg" width="24" height="24" alt="LinkedIn" />](https://www.linkedin.com/in/floweralice/)
-  &nbsp;
-  [<img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/x.svg" width="24" height="24" alt="X" />](https://x.com/flower_alicee)
+  [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  [![Website](https://img.shields.io/badge/Website-Live-2563eb.svg)](https://animation-error-check.onrender.com/)
+  [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/KKwgJYeE)
+
+  [Website](https://animation-error-check.onrender.com/) · [Link](https://youtu.be/6vwCnmOw83E?si=1w9_DXhVD6wIdc87) · [Demo Video](https://youtu.be/6vwCnmOw83E) · [Discord](https://discord.gg/KKwgJYeE) · [Gumroad](https://floweralicee.gumroad.com/l/hana) ·
 </div>
-
----
-
-## Links
-
-- [Live Demo](https://animation-error-check.onrender.com/) — Try Hana online
-- [Link](https://animation-error-check.onrender.com/) — animation-error-check.onrender.com
-- [Demo Video](https://youtu.be/6vwCnmOw83E) — Watch on YouTube
-- [Discord](https://discord.gg/KKwgJYeE) — Community & support
-- [Gumroad](https://floweralicee.gumroad.com/l/hana) — Get Hana
-- [GitHub](https://github.com/floweralicee/animation-error-check) — Source code
-- [LinkedIn](https://www.linkedin.com/in/floweralice/) — Connect
-- [X](https://x.com/flower_alicee) — Follow
 
 ---
 
