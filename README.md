@@ -18,6 +18,19 @@
 
 ---
 
+## Links
+
+- [Live Demo](https://animation-error-check.onrender.com/) — Try Hana online
+- [Link](https://animation-error-check.onrender.com/) — animation-error-check.onrender.com
+- [Demo Video](https://youtu.be/6vwCnmOw83E) — Watch on YouTube
+- [Discord](https://discord.gg/KKwgJYeE) — Community & support
+- [Gumroad](https://floweralicee.gumroad.com/l/hana) — Get Hana
+- [GitHub](https://github.com/floweralicee/animation-error-check) — Source code
+- [LinkedIn](https://www.linkedin.com/in/floweralice/) — Connect
+- [X](https://x.com/flower_alicee) — Follow
+
+---
+
 ## ⭐ Support This Project
 
 If Hana helps you, please consider giving it a star — it helps other animators find it!
@@ -219,9 +232,9 @@ animation-error-check/
 
 Built by **Alice Chen** — animator and developer.
 
-- 🌐 [floweralice.me](https://www.floweralice.me/)
-- 💼 [linkedin.com/in/floweralice](https://www.linkedin.com/in/floweralice/)
-- 🐦 [x.com/flower_alicee](https://x.com/flower_alicee)
+- **Website:** [floweralice.me](https://www.floweralice.me/)
+- **LinkedIn:** [linkedin.com/in/floweralice](https://www.linkedin.com/in/floweralice/)
+- **X:** [x.com/flower_alicee](https://x.com/flower_alicee)
 
 ---
 
