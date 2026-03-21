@@ -156,3 +156,23 @@ export interface PipelineInput {
   workDir: string;
   sampleCount?: number;
 }
+
+// --- Zone motion trail types (for canvas overlay on VideoPlayer) ---
+
+export interface ZoneMotionPathPoint {
+  /** Sampled frame number */
+  frame: number;
+  /** Normalized 0–1 in video space (X axis) */
+  x: number;
+  /** Normalized 0–1 in video space (Y axis) */
+  y: number;
+}
+
+export interface ZoneMotionPath {
+  /** Body zone identifier e.g. 'head', 'left_arm' */
+  zone: string;
+  /** Hex color string for this zone's trail */
+  color: string;
+  /** Ordered motion path points across frames */
+  path: ZoneMotionPathPoint[];
+}

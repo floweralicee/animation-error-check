@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { AnalysisOutput } from '@/lib/types';
+import { AnalysisOutput, ZoneMotionPath } from '@/lib/types';
 import { useLocale } from '@/components/LocaleProvider';
 import { ZONE_DISPLAY_KEYS, CATEGORY_KEYS, SEVERITY_KEYS } from '@/lib/i18n';
 import VideoPlayer from './VideoPlayer';
 import IssueTimeline from './IssueTimeline';
 import PrincipleCard from './PrincipleCard';
 import MotionProfile from './MotionProfile';
+import MotionCurve, { VelocityCurveSegment } from './MotionCurve';
 import KeyframePreview from './KeyframePreview';
 
 interface ResultsViewProps {
@@ -78,6 +79,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
           fps={displayFps}
           totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
           onFrameChange={handleFrameChange}
+          zoneMotionPaths={(result as AnalysisOutputWithMotion).zone_motion_paths ?? []}
         />
 
         <IssueTimeline
@@ -132,7 +134,19 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
         </div>
       </div>
 
-      {/* Motion Profile */}
+      {/* Motion Curve — multi-color SVG line chart synced with the video player */}
+      {result.motion_profile && (result as AnalysisOutputWithMotion).motion_profile_detail && (
+        <MotionCurve
+          perFrame={(result as AnalysisOutputWithMotion).motion_profile_detail ?? []}
+          velocityCurveSegments={(result as AnalysisOutputWithMotion).velocity_curve_segments ?? []}
+          maxDisplacementFrame={result.motion_profile.max_displacement_frame}
+          currentFrame={currentFrame}
+          totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
+          onSeekToFrame={handleSeekToFrame}
+        />
+      )}
+
+      {/* Motion Profile — legacy bar chart */}
       {result.motion_profile && (
         <MotionProfile
           perFrame={(result as AnalysisOutputWithMotion).motion_profile_detail ?? []}
@@ -211,5 +225,7 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
 }
 
 interface AnalysisOutputWithMotion extends AnalysisOutput {
-  motion_profile_detail?: { frame: number; displacement: number; isHold: boolean }[];
+  motion_profile_detail?: { frame: number; displacement: number; acceleration: number; isHold: boolean }[];
+  velocity_curve_segments?: VelocityCurveSegment[];
+  zone_motion_paths?: ZoneMotionPath[];
 }
