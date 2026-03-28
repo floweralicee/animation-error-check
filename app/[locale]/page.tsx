@@ -1,13 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
 import UploadForm from '@/components/UploadForm';
 import ResultsView from '@/components/ResultsView';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLocale } from '@/components/LocaleProvider';
-import { useAnalysis } from '@/components/AnalysisProvider';
+import { useAnalysis, type AnalysisResponse } from '@/components/AnalysisProvider';
+import {
+  captureAnalysisCompleted,
+  captureAnalysisFailed,
+  captureAnalysisStarted,
+  fileSizeBucket,
+  registerLocale,
+} from '@/lib/analytics';
 
 export default function Home() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+
+  useEffect(() => {
+    registerLocale(locale);
+  }, [locale]);
   const {
     result,
     videoUrl,
@@ -27,6 +39,12 @@ export default function Home() {
     const blobUrl = URL.createObjectURL(file);
     setVideoUrl(blobUrl);
 
+    captureAnalysisStarted({
+      exercise_type: exerciseType,
+      file_size_bucket: fileSizeBucket(file.size),
+      locale,
+    });
+
     try {
       const formData = new FormData();
       formData.append('video', file);
@@ -37,13 +55,34 @@ export default function Home() {
         body: formData,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `${t('serverError')}: ${response.status}`);
+      let data: unknown;
+      try {
+        data = await response.json();
+      } catch {
+        captureAnalysisFailed({
+          exercise_type: exerciseType,
+          error_type: 'client',
+        });
+        setError(t('somethingWentWrong'));
+        return;
       }
 
-      setResult(data);
+      if (!response.ok) {
+        captureAnalysisFailed({
+          exercise_type: exerciseType,
+          error_type: 'server',
+          http_status: response.status,
+        });
+        const errBody = data as { error?: string };
+        setError(errBody.error || `${t('serverError')}: ${response.status}`);
+        return;
+      }
+
+      captureAnalysisCompleted({
+        exercise_type: exerciseType,
+        http_status: response.status,
+      });
+      setResult(data as AnalysisResponse);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('somethingWentWrong');
       const isConnectionError =
@@ -52,6 +91,10 @@ export default function Home() {
         msg.includes('Network request failed') ||
         msg.toLowerCase().includes('connection') ||
         msg.includes('ERR_CONNECTION');
+      captureAnalysisFailed({
+        exercise_type: exerciseType,
+        error_type: isConnectionError ? 'network' : 'client',
+      });
       setError(isConnectionError ? t('connectionError') : msg);
     } finally {
       setLoading(false);
@@ -163,6 +206,15 @@ export default function Home() {
         }}
       >
         <p style={{ margin: 0 }}>{t('madeBy')}</p>
+        <p
+          style={{
+            margin: 0,
+            maxWidth: '36rem',
+            lineHeight: 1.5,
+          }}
+        >
+          {t('footerQuestions')}
+        </p>
         <div
           style={{
             display: 'flex',
@@ -171,6 +223,14 @@ export default function Home() {
             gap: '1.5rem',
           }}
         >
+          <a
+            href="https://discord.gg/hSg98xxH"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Discord
+          </a>
           <a
             href="https://www.linkedin.com/in/floweralice/"
             target="_blank"

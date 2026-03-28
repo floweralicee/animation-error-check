@@ -135,6 +135,11 @@ export const translations = {
     // Video player
     previousFrame: 'Previous frame',
     nextFrame: 'Next frame',
+    trailsOn: '◎ Trails On',
+    trailsOff: '○ Trails Off',
+    trailsShowMotionTrails: 'Show motion trails',
+    trailsHideMotionTrails: 'Hide motion trails',
+    trailsNewFeatureTesting: '(new feature testing)',
 
     // Zone labels
     zoneWholeBody: '🦴 Whole Body',
@@ -169,12 +174,14 @@ export const translations = {
 
     // Footer
     madeBy: 'Made by Alice Chen',
+    footerQuestions:
+      'If you have questions, reach me on LinkedIn, X, Rednote (动画人咕噜咕噜), or Discord.',
   },
   zh: {
     // Hero
     heroSubhead: '你的24/7动画导师。',
     heroTagline:
-      '传个片段上来，我们逐帧帮你看看 —— 哪里能更好，一眼就懂。',
+      '传个片段上来，我们逐帧帮你分析根据动画的 12 个原则。之后怎么改，一眼就懂。',
     featureCheckShot: '检查你的镜头',
     featureSpotIssues: '发现潜在问题',
     featureUnderstandFix: '明确优先修复项',
@@ -285,6 +292,11 @@ export const translations = {
     // Video player
     previousFrame: '上一帧',
     nextFrame: '下一帧',
+    trailsOn: '◎ 轨迹开',
+    trailsOff: '○ 轨迹关',
+    trailsShowMotionTrails: '显示运动轨迹',
+    trailsHideMotionTrails: '隐藏运动轨迹',
+    trailsNewFeatureTesting: '（新功能测试中）',
 
     // Zone labels
     zoneWholeBody: '🦴 全身',
@@ -318,7 +330,9 @@ export const translations = {
     principleStraightAheadPoseToPose: '逐格绘制 / 关键帧绘制',
 
     // Footer
-    madeBy: '由 Alice Chen 制作',
+    madeBy: '由 Alice 制作',
+    footerQuestions:
+      '如有问题，欢迎在 LinkedIn、X、Rednote（动画人咕噜咕噜）或 Discord 联系我。',
   },
 } as const;
 

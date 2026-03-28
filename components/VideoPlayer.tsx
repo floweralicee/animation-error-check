@@ -41,7 +41,7 @@ export default function VideoPlayer({
   const [playing, setPlaying] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showTrails, setShowTrails] = useState(true);
+  const [showTrails, setShowTrails] = useState(false);
 
   const timeToFrame = useCallback((time: number) => Math.floor(time * fps), [fps]);
   const frameToTime = useCallback((frame: number) => frame / fps, [fps]);
@@ -259,19 +259,39 @@ export default function VideoPlayer({
           {t('framesLabel')} <strong>{currentFrame}</strong> / {totalFrames}
         </span>
         {zoneMotionPaths.length > 0 && (
-          <button
-            className="video-btn"
-            onClick={() => setShowTrails((v) => !v)}
+          <div
+            className="video-trails-control"
             style={{
               marginLeft: 'auto',
-              fontSize: '0.75rem',
-              opacity: showTrails ? 1 : 0.5,
-              borderColor: showTrails ? 'var(--accent)' : undefined,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
             }}
-            title={showTrails ? 'Hide motion trails' : 'Show motion trails'}
           >
-            {showTrails ? '◎ Trails On' : '○ Trails Off'}
-          </button>
+            <button
+              className="video-btn"
+              onClick={() => setShowTrails((v) => !v)}
+              style={{
+                fontSize: '0.75rem',
+                opacity: showTrails ? 1 : 0.5,
+                borderColor: showTrails ? 'var(--accent)' : undefined,
+              }}
+              title={showTrails ? t('trailsHideMotionTrails') : t('trailsShowMotionTrails')}
+            >
+              {showTrails ? t('trailsOn') : t('trailsOff')}
+            </button>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                color: 'var(--text-muted)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('trailsNewFeatureTesting')}
+            </span>
+          </div>
         )}
       </div>
     </div>

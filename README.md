@@ -176,6 +176,10 @@ cp .env.example .env.local
 | `MAX_UPLOAD_SIZE` | `104857600` (100 MB) | Maximum upload file size in bytes |
 | `SAMPLE_FRAME_COUNT` | `48` | Number of frames sampled from the video |
 | `UPLOAD_DIR` | `./temp_uploads` | Temporary directory for uploaded files |
+| `NEXT_PUBLIC_POSTHOG_KEY` | (unset) | PostHog project API key; omit to disable analytics |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | PostHog ingest host (use `eu.i.posthog.com` for EU projects) |
+
+If you deploy on **Render**, add the same `NEXT_PUBLIC_*` variables under your Web Service → **Environment**. Redeploy after changing them. Verify events in PostHog → **Activity** → **Live events**.
 
 ---
 
