@@ -3,6 +3,14 @@
     "app/api/analyze/route.ts": {
       "memory": 2048,
       "maxDuration": 60
+    },
+    "app/api/inngest/route.ts": {
+      "memory": 2048,
+      "maxDuration": 300
+    },
+    "app/api/analyze/jobs/route.ts": {
+      "memory": 1024,
+      "maxDuration": 60
     }
   }
 }

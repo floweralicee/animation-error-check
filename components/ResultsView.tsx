@@ -14,11 +14,19 @@ import KeyframePreview from './KeyframePreview';
 interface ResultsViewProps {
   result: AnalysisOutput;
   keyframePreviews: string[];
-  videoUrl: string;
+  videoUrl: string | null;
+  /** When set (e.g. from saved job), shown under the score. */
+  analyzedAt?: Date | null;
 }
 
-export default function ResultsView({ result, keyframePreviews, videoUrl }: ResultsViewProps) {
-  const { t } = useLocale();
+export default function ResultsView({
+  result,
+  keyframePreviews,
+  videoUrl,
+  analyzedAt,
+}: ResultsViewProps) {
+  const { t, locale } = useLocale();
+  const hasVideo = Boolean(videoUrl && videoUrl.length > 0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [displayFps, setDisplayFps] = useState(result.metadata.fps || 24);
 
@@ -49,6 +57,15 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
           {Math.round(result.overall_score * 100)}
         </div>
         <p className="mt-1 text-sm text-text-muted">/100</p>
+        {analyzedAt && (
+          <p className="mt-4 text-sm text-text-muted">
+            {t('analyzedAtLabel')}:{' '}
+            {analyzedAt.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })}
+          </p>
+        )}
       </div>
 
       {/* Summary */}
@@ -61,34 +78,44 @@ export default function ResultsView({ result, keyframePreviews, videoUrl }: Resu
       <div className="card video-analysis-card">
         <div className="video-analysis-header">
           <h2>{t('shotReview')}</h2>
-          <div className="fps-selector">
-            <label htmlFor="display-fps">{t('playback')}</label>
-            <select
-              id="display-fps"
-              value={displayFps}
-              onChange={(e) => setDisplayFps(parseInt(e.target.value, 10))}
-            >
-              <option value="24">24 fps</option>
-              <option value="60">60 fps</option>
-            </select>
-          </div>
+          {hasVideo && (
+            <div className="fps-selector">
+              <label htmlFor="display-fps">{t('playback')}</label>
+              <select
+                id="display-fps"
+                value={displayFps}
+                onChange={(e) => setDisplayFps(parseInt(e.target.value, 10))}
+              >
+                <option value="24">24 fps</option>
+                <option value="60">60 fps</option>
+              </select>
+            </div>
+          )}
         </div>
 
-        <VideoPlayer
-          videoUrl={videoUrl}
-          fps={displayFps}
-          totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
-          onFrameChange={handleFrameChange}
-          zoneMotionPaths={(result as AnalysisOutputWithMotion).zone_motion_paths ?? []}
-        />
+        {hasVideo ? (
+          <>
+            <VideoPlayer
+              videoUrl={videoUrl!}
+              fps={displayFps}
+              totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
+              onFrameChange={handleFrameChange}
+              zoneMotionPaths={(result as AnalysisOutputWithMotion).zone_motion_paths ?? []}
+            />
 
-        <IssueTimeline
-          principlesAnalysis={result.principles_analysis}
-          totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
-          fps={displayFps}
-          currentFrame={currentFrame}
-          onSeekToFrame={handleSeekToFrame}
-        />
+            <IssueTimeline
+              principlesAnalysis={result.principles_analysis}
+              totalFrames={Math.round(result.metadata.duration_sec * displayFps)}
+              fps={displayFps}
+              currentFrame={currentFrame}
+              onSeekToFrame={handleSeekToFrame}
+            />
+          </>
+        ) : (
+          <p className="text-sm text-text-muted" style={{ marginBottom: '1rem' }}>
+            {t('videoReplayUnavailable')}
+          </p>
+        )}
       </div>
 
       {/* Top Priorities */}

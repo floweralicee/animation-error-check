@@ -34,6 +34,8 @@ export const translations = {
     // Upload form
     animationClip: 'Animation Clip',
     exerciseType: 'Exercise Type',
+    email: "Email (we'll send you a copy of your analysis)",
+    emailPlaceholder: 'harrypotter@Hogwarts.com',
     analyze: 'Analyze',
     analyzing: 'Analyzing...',
     selected: 'Selected',
@@ -52,7 +54,27 @@ export const translations = {
     connectionError:
       'Connection failed. Make sure the dev server is running (npm run dev) and try again.',
     somethingWentWrong: 'Something went wrong',
+    emailRequired: 'Email is required',
+    emailInvalid: 'Invalid email format',
+    asyncAnalysisUnavailable:
+      'Async analysis is not configured. Ask the admin to set Supabase and Inngest, or turn off async mode.',
+    analysisPollingTimeout:
+      'Analysis is taking longer than expected. If you enabled email, check your inbox for a summary.',
     serverError: 'Server error',
+
+    analyzedAtLabel: 'Analyzed',
+    videoReplayUnavailable:
+      'Video replay is only available on the device where you uploaded this clip. Charts and scores below still reflect your analysis.',
+    jobNotFound: 'This analysis link is invalid or has expired.',
+    jobResultUnavailable:
+      'This analysis is marked complete but no saved result was found. Please run the analysis again.',
+    jobDeepLinkUnavailable:
+      'Saved results are unavailable (server not configured). Open Hana from the device where you ran the analysis.',
+    jobLoadFailed: 'Could not load this analysis.',
+    jobStillProcessing: 'This analysis is still running. Please wait…',
+    emailSentHint: '(Email sent)',
+    emailFailedHint: '(Email could not be sent)',
+    emailSkippedHint: '(Summary email not sent — email not configured)',
 
     // Results
     overallScore: 'Overall Animation Score',
@@ -175,7 +197,7 @@ export const translations = {
     // Footer
     madeBy: 'Made by Alice Chen',
     footerQuestions:
-      'If you have questions, reach me on LinkedIn, X, Rednote (动画人咕噜咕噜), or Discord.',
+      'If you have questions, reach me here.',
   },
   zh: {
     // Hero
@@ -191,6 +213,8 @@ export const translations = {
     // Upload form
     animationClip: '动画片段',
     exerciseType: '练习类型',
+    email: '邮箱（我们会把分析结果副本发到你邮箱）',
+    emailPlaceholder: 'harrypotter@Hogwarts.com',
     analyze: '分析',
     analyzing: '分析中...',
     selected: '已选择',
@@ -209,7 +233,26 @@ export const translations = {
     connectionError:
       '连接失败。请确保开发服务器已启动（npm run dev）后重试。',
     somethingWentWrong: '出了点问题',
+    emailRequired: '请填写邮箱',
+    emailInvalid: '邮箱格式不正确',
+    asyncAnalysisUnavailable:
+      '异步分析未配置。请让管理员配置 Supabase 与 Inngest，或关闭异步模式。',
+    analysisPollingTimeout: '分析耗时过长。若已开启邮件，请查收邮箱中的摘要。',
     serverError: '服务器错误',
+
+    analyzedAtLabel: '分析时间',
+    videoReplayUnavailable:
+      '视频回放仅在上传该片段的设备上可用。下方图表与分数仍对应当次分析。',
+    jobNotFound: '该分析链接无效或已失效。',
+    jobResultUnavailable:
+      '该分析显示已完成，但未找到保存的结果。请重新运行分析。',
+    jobDeepLinkUnavailable:
+      '无法加载已保存的结果（服务器未配置）。请在上传分析的设备上打开 Hana。',
+    jobLoadFailed: '无法加载该分析。',
+    jobStillProcessing: '分析仍在进行中，请稍候…',
+    emailSentHint: '（邮件已发送）',
+    emailFailedHint: '（邮件未能发送）',
+    emailSkippedHint: '（未发送摘要邮件 — 邮件未配置）',
 
     // Results
     overallScore: '动画综合评分',
@@ -332,7 +375,7 @@ export const translations = {
     // Footer
     madeBy: '由 Alice 制作',
     footerQuestions:
-      '如有问题，欢迎在 LinkedIn、X、Rednote（动画人咕噜咕噜）或 Discord 联系我。',
+      '如有问题，欢迎在这里联系我。',
   },
 } as const;
 

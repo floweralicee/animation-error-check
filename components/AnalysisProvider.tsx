@@ -7,12 +7,10 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { AnalysisOutput } from '@/lib/types';
+import type { AnalysisApiResponse } from '@/lib/analysis/apiResponse';
 
-export interface AnalysisResponse extends AnalysisOutput {
-  keyframe_previews?: string[];
-  motion_profile_detail?: { frame: number; displacement: number; isHold: boolean }[];
-}
+/** Full analysis payload returned by the API (sync or async poll). */
+export type AnalysisResponse = AnalysisApiResponse;
 
 interface AnalysisContextValue {
   result: AnalysisResponse | null;
