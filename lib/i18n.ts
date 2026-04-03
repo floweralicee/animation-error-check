@@ -198,6 +198,15 @@ export const translations = {
     madeBy: 'Made by Alice Chen',
     footerQuestions:
       'If you have questions, reach me here.',
+
+    // Event invite popup
+    eventInviteTitle: '你好呀！',
+    eventInviteBody:
+      '你今天真的是太幸运啦！找到了这个软件里的小彩蛋，只有5%的用户才有哦。动画导师咕噜给你准备了一个动画公开课《像玩"找不同"一样做动画》，欢迎来参加。',
+    eventInviteCta: '好',
+    eventInviteClose: '关闭',
+    eventInviteDismiss: '不再显示',
+    eventInviteFabLabel: '打开活动邀请',
   },
   zh: {
     // Hero
@@ -376,6 +385,15 @@ export const translations = {
     madeBy: '由 Alice 制作',
     footerQuestions:
       '如有问题，欢迎在这里联系我。',
+
+    // Event invite popup
+    eventInviteTitle: '你好呀！',
+    eventInviteBody:
+      '你今天真的是太幸运啦！找到了这个软件里的小彩蛋，只有5%的用户才有哦。动画导师咕噜给你准备了一个动画公开课《像玩"找不同"一样做动画》，欢迎来参加。',
+    eventInviteCta: '好',
+    eventInviteClose: '关闭',
+    eventInviteDismiss: '不再显示',
+    eventInviteFabLabel: '打开活动邀请',
   },
 } as const;
 

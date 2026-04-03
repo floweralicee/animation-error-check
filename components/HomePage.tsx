@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import UploadForm from '@/components/UploadForm';
 import ResultsView from '@/components/ResultsView';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import EventInvitePopup from '@/components/EventInvitePopup';
 import { useLocale } from '@/components/LocaleProvider';
 import { useAnalysis, type AnalysisResponse } from '@/components/AnalysisProvider';
 import {
@@ -308,6 +309,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <EventInvitePopup skipWhileJobLoading={!!jobFromUrl} />
       <main className="container flex-1">
         <div className="hero hero-with-grain">
           <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>

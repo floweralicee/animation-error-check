@@ -936,6 +936,251 @@ h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.5re
 .timeline-nav { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
 .timeline-nav .video-btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
 
+/* ── Event Invite Popup ─────────────────────────────────────────────── */
+
+/* Backdrop */
+.event-invite-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  animation: event-invite-fade-in 0.25s ease;
+}
+
+/* Envelope wrapper — centered on screen, above backdrop */
+.event-invite-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 901;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(340px, calc(100vw - 2rem));
+  animation: event-invite-rise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center center;
+}
+
+/* Hana logo badge — floats above the envelope */
+.event-invite-seal {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2.5px solid #e8d5b0;
+  background: #fffdf7;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -20px; /* overlaps slightly onto the flap */
+  position: relative;
+  z-index: 2;
+}
+
+.event-invite-seal img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+/* Envelope outer shell */
+.event-invite-envelope {
+  width: 100%;
+  max-width: 340px;
+  background: #fffdf7;
+  border: 1.5px solid #e8d5b0;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Envelope flap (decorative top area) */
+.event-invite-flap {
+  width: 100%;
+  height: 48px;
+  background: #f5e9c8;
+  border-bottom: 1.5px solid #e8d5b0;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Letter body */
+.event-invite-body {
+  padding: 2.5rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.event-invite-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1207;
+  margin: 0;
+  text-align: center;
+}
+
+.event-invite-text {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #4a3b22;
+  margin: 0;
+  text-align: center;
+}
+
+/* Decorative ruling lines */
+.event-invite-rule {
+  border: none;
+  border-top: 1px dashed #e8d5b0;
+  margin: 0;
+}
+
+/* CTA button */
+.event-invite-cta {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: #1a1207;
+  color: #fffdf7;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.15s;
+  border: none;
+  cursor: pointer;
+}
+
+.event-invite-cta:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* Control row: close + dismiss */
+.event-invite-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.25rem;
+}
+
+.event-invite-btn-close,
+.event-invite-btn-dismiss {
+  background: none;
+  border: none;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.78rem;
+  color: #a08060;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+  min-width: auto;
+}
+
+.event-invite-btn-close:hover,
+.event-invite-btn-dismiss:hover {
+  background: #f5e9c8;
+  color: #4a3b22;
+}
+
+/* Fixed FAB (minimized state) */
+.event-invite-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  z-index: 890;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #e8d5b0;
+  background: #fffdf7;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.18s, box-shadow 0.18s;
+  animation: event-invite-fab-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.event-invite-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.event-invite-fab img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+/* Pulsing dot on FAB */
+.event-invite-fab-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e67e22;
+  border: 2px solid #fffdf7;
+  animation: event-invite-pulse 2s ease-in-out infinite;
+}
+
+/* Keyframe animations */
+@keyframes event-invite-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes event-invite-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+  }
+}
+
+@keyframes event-invite-fab-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes event-invite-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* Reduced-motion: strip all animations */
+@media (prefers-reduced-motion: reduce) {
+  .event-invite-backdrop,
+  .event-invite-modal,
+  .event-invite-fab,
+  .event-invite-fab-dot {
+    animation: none;
+  }
+  .event-invite-cta { transition: none; }
+}
+
+/* Mobile adjustments */
+@media (max-width: 520px) {
+  .event-invite-modal {
+    width: calc(100vw - 2rem);
+  }
+  .event-invite-fab {
+    bottom: 1.25rem;
+    right: 1rem;
+  }
+}
+
 /* ── Footer ─────────────────────────────────────────────────────────── */
 
 footer a {

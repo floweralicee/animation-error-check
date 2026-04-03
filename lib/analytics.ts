@@ -40,3 +40,18 @@ export function registerLocale(locale: string): void {
   if (!enabled) return;
   posthog.register({ locale });
 }
+
+export function captureEventInviteShown(): void {
+  if (!enabled) return;
+  posthog.capture('event_invite_shown');
+}
+
+export function captureEventInviteDismissed(action: 'minimize' | 'dismiss_forever'): void {
+  if (!enabled) return;
+  posthog.capture('event_invite_dismissed', { action });
+}
+
+export function captureEventInviteCtaClicked(): void {
+  if (!enabled) return;
+  posthog.capture('event_invite_cta_clicked');
+}
