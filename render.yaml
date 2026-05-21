@@ -9,3 +9,5 @@ services:
         value: "20"
       - key: UPLOAD_DIR
         value: /tmp/temp_uploads
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://floweralice.me/hana

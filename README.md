@@ -4,10 +4,10 @@
   <p><strong>Frame-by-frame feedback on the 12 principles of animation.</strong></p>
 
   [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-  [![Website](https://img.shields.io/badge/Website-Live-2563eb.svg)](https://animation-error-check.onrender.com/)
+  [![Website](https://img.shields.io/badge/Website-Live-2563eb.svg)](https://floweralice.me/hana)
   [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/KKwgJYeE)
 
-  [Website](https://animation-error-check.onrender.com/) · [Link](https://youtu.be/6vwCnmOw83E?si=1w9_DXhVD6wIdc87) · [Demo Video](https://youtu.be/6vwCnmOw83E) · [Discord](https://discord.gg/KKwgJYeE) · [Gumroad](https://floweralicee.gumroad.com/l/hana) ·
+  [Website](https://floweralice.me/hana) · [Link](https://youtu.be/6vwCnmOw83E?si=1w9_DXhVD6wIdc87) · [Demo Video](https://youtu.be/6vwCnmOw83E) · [Discord](https://discord.gg/KKwgJYeE) · [Gumroad](https://floweralicee.gumroad.com/l/hana) ·
 </div>
 
 ---
@@ -26,7 +26,7 @@ Thank you — it genuinely means a lot. 🙏
 
 ## 🌐 Try It Live
 
-**[animation-error-check.onrender.com](https://animation-error-check.onrender.com/)**
+**[floweralice.me/hana](https://floweralice.me/hana)** (legacy [animation-error-check.onrender.com](https://animation-error-check.onrender.com/) redirects here)
 
 > **Heads-up before you upload:**
 > - **MP4 files only.** Convert your clip to `.mp4` first for the best results.

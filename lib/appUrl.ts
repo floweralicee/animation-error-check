@@ -1,5 +1,8 @@
 import { defaultLocale, type Locale } from '@/lib/i18n';
 
+export const CANONICAL_APP_URL = 'https://floweralice.me/hana';
+export const LEGACY_RENDER_HOST = 'animation-error-check.onrender.com';
+
 /**
  * Public site origin for links (email, redirects). No trailing slash.
  */
@@ -8,10 +11,9 @@ export function getAppBaseUrl(): string {
   if (explicit) {
     return explicit.replace(/\/$/, '');
   }
-  // Render sets this automatically — avoids emails pointing at localhost when NEXT_PUBLIC_* was missing at build.
-  const render = process.env.RENDER_EXTERNAL_URL;
-  if (render) {
-    return render.replace(/\/$/, '');
+  // Legacy Render deploy redirects to the canonical URL; keep outbound links aligned.
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return CANONICAL_APP_URL;
   }
   const vercel = process.env.VERCEL_URL;
   if (vercel) {
